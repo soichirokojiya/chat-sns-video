@@ -2,3 +2,4 @@ node_modules/
 output/frames/
 output/final.mp4
 dist/
+.vercel

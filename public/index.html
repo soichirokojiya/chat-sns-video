@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>うめこ動画エディタ</title>
+  <style>
+    :root {
+      --bg: #f5f5f0;
+      --card: #fff;
+      --border: #e0ddd5;
+      --text: #333;
+      --text-sub: #888;
+      --accent: #E8913A;
+      --accent-light: #FFF3E0;
+      --danger: #e55;
+      --radius: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* === Left: Editor === */
+    .editor {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
+    }
+    .editor h1 {
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .editor h1 span { font-size: 28px; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar button, .toolbar select {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .toolbar button:hover { background: var(--accent-light); border-color: var(--accent); }
+    .toolbar .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .toolbar .btn-primary:hover { opacity: 0.85; }
+
+    /* Scenario meta */
+    .meta-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .meta-section h2 { font-size: 15px; color: var(--text-sub); }
+    .meta-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .meta-row label {
+      font-size: 13px;
+      color: var(--text-sub);
+      min-width: 80px;
+    }
+    .meta-row input, .meta-row select {
+      flex: 1;
+      min-width: 100px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* Members */
+    .member-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .member-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--accent-light);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .member-chip:hover { border-color: var(--accent); }
+    .member-chip .dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+
+    /* Scene list */
+    .scene-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .scene-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: box-shadow 0.15s;
+      cursor: grab;
+    }
+    .scene-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .scene-card.dragging { opacity: 0.5; }
+    .scene-card.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+    .scene-num {
+      font-size: 12px;
+      color: var(--text-sub);
+      background: var(--bg);
+      border-radius: 4px;
+      padding: 2px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .scene-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .scene-type-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .scene-type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .scene-type-badge.hook { background: #E3F2FD; color: #1565C0; }
+    .scene-type-badge.message { background: #E8F5E9; color: #2E7D32; }
+    .scene-type-badge.caption { background: #FFF3E0; color: #E65100; }
+    .scene-type-badge.ending { background: #FCE4EC; color: #AD1457; }
+
+    .scene-speaker {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .scene-duration {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-left: auto;
+    }
+    .scene-text-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 36px;
+      line-height: 1.5;
+    }
+    .scene-text-input:focus { outline: none; border-color: var(--accent); }
+
+    .scene-fields {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .scene-fields select, .scene-fields input {
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .scene-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .scene-actions button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .scene-actions button:hover { background: #fee; border-color: var(--danger); }
+    .scene-actions .move-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+
+    /* Add scene */
+    .add-scene-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .add-scene-bar button {
+      padding: 8px 16px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-sub);
+      transition: all 0.15s;
+    }
+    .add-scene-bar button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* Member editor modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      min-width: 380px;
+      max-width: 90vw;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+    .modal h3 { margin-bottom: 16px; font-size: 18px; }
+    .modal .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .modal .field label { font-size: 13px; color: var(--text-sub); }
+    .modal .field input, .modal .field select {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    .modal-actions button {
+      padding: 8px 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .modal-actions .btn-save {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .modal-actions .btn-delete {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+      margin-right: auto;
+    }
+
+    /* === Right: Preview === */
+    .preview-panel {
+      width: 380px;
+      flex-shrink: 0;
+      background: #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 12px;
+    }
+    .preview-label {
+      color: #aaa;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .preview-phone {
+      width: 270px;
+      height: 480px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 3px solid #444;
+      background: #000;
+      position: relative;
+    }
+    .preview-phone iframe {
+      width: 1080px;
+      height: 1920px;
+      border: none;
+      transform: scale(0.25);
+      transform-origin: top left;
+    }
+    .preview-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .preview-controls button {
+      padding: 8px 20px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .preview-controls button:hover { opacity: 0.85; }
+    .preview-controls button:disabled { opacity: 0.4; cursor: default; }
+    .preview-progress {
+      color: #aaa;
+      font-size: 12px;
+      text-align: center;
+    }
+    .total-duration {
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Saved list */
+    .saved-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .saved-section h2 { font-size: 15px; color: var(--text-sub); margin-bottom: 10px; }
+    .saved-list { display: flex; flex-direction: column; gap: 6px; }
+    .saved-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .saved-item:hover { background: var(--accent-light); }
+    .saved-item-actions { display: flex; gap: 4px; }
+    .saved-item-actions button {
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .saved-item-actions button:hover { border-color: var(--danger); }
+  </style>
+</head>
+<body>
+  <!-- Editor Panel -->
+  <div class="editor" id="editorPanel">
+    <h1><span>🌸</span> うめこ動画エディタ</h1>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn-primary" onclick="playPreview()">再生</button>
+      <button onclick="resetPreview()">リセット</button>
+      <button onclick="saveScenario()">保存</button>
+      <button onclick="exportJSON()">JSONエクスポート</button>
+      <button onclick="importJSON()">JSONインポート</button>
+      <button onclick="newScenario()">新規シナリオ</button>
+    </div>
+
+    <!-- Meta -->
+    <div class="meta-section">
+      <h2>基本情報</h2>
+      <div class="meta-row">
+        <label>タイトル</label>
+        <input type="text" id="metaTitle" oninput="updateMeta()">
+      </div>
+      <div class="meta-row">
+        <label>グループ名</label>
+        <input type="text" id="metaGroup" oninput="updateMeta()">
+      </div>
+      <div class="meta-row">
+        <label>尺(秒)</label>
+        <input type="number" id="metaDuration" value="22" style="width:80px" oninput="updateMeta()">
+        <label>FPS</label>
+        <input type="number" id="metaFps" value="30" style="width:60px" oninput="updateMeta()">
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="meta-section">
+      <h2>メンバー</h2>
+      <div class="member-list" id="memberList"></div>
+      <button onclick="openMemberModal()" style="margin-top:8px;padding:6px 14px;border:2px dashed var(--border);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--text-sub)">+ メンバー追加</button>
+    </div>
+
+    <!-- Scenes -->
+    <div class="meta-section">
+      <h2>シーン一覧 (<span id="sceneCount">0</span>シーン・合計 <span id="totalDuration">0</span>秒)</h2>
+      <div class="scene-list" id="sceneList"></div>
+      <div class="add-scene-bar" style="margin-top:12px">
+        <button onclick="addScene('hook')">+ フック</button>
+        <button onclick="addScene('message')">+ メッセージ</button>
+        <button onclick="addScene('caption')">+ テロップ</button>
+        <button onclick="addScene('ending')">+ エンディング</button>
+      </div>
+    </div>
+
+    <!-- Saved scenarios -->
+    <div class="saved-section">
+      <h2>保存済みシナリオ</h2>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+  </div>
+
+  <!-- Preview Panel -->
+  <div class="preview-panel">
+    <div class="preview-label">プレビュー</div>
+    <div class="preview-phone">
+      <iframe id="previewFrame" src="chat.html"></iframe>
+    </div>
+    <div class="preview-controls">
+      <button onclick="playPreview()" id="playBtn">再生</button>
+      <button onclick="resetPreview()">リセット</button>
+    </div>
+    <div class="preview-progress" id="previewProgress"></div>
+    <div class="total-duration" id="previewDuration"></div>
+  </div>
+
+  <!-- Member modal -->
+  <div class="modal-overlay" id="memberModal">
+    <div class="modal">
+      <h3 id="memberModalTitle">メンバー編集</h3>
+      <div class="field">
+        <label>ID (英数字)</label>
+        <input type="text" id="memId" placeholder="例: takashi">
+      </div>
+      <div class="field">
+        <label>表示名</label>
+        <input type="text" id="memName" placeholder="例: たかし">
+      </div>
+      <div class="field">
+        <label>吹き出し位置</label>
+        <select id="memSide">
+          <option value="left">左 (相手)</option>
+          <option value="right">右 (自分)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>アイコン絵文字</label>
+        <input type="text" id="memEmoji" placeholder="例: 👨">
+      </div>
+      <div class="field">
+        <label>アイコン背景色</label>
+        <input type="color" id="memColor" value="#4A90D9">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-delete" id="memDeleteBtn" onclick="deleteMember()" style="display:none">削除</button>
+        <button onclick="closeMemberModal()">キャンセル</button>
+        <button class="btn-save" onclick="saveMember()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import modal -->
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+
+  <script>
+    // ==================== State ====================
+    const DEFAULT_SCENARIO = {
+      title: "夫婦LINE - うめこ介入篇",
+      format: { width: 1080, height: 1920, fps: 30, durationSec: 22 },
+      groupName: "家族グループ",
+      members: {
+        takashi: { name: "たかし", side: "left", avatarColor: "#4A90D9", avatarEmoji: "👨" },
+        akane: { name: "あかね", side: "right", avatarColor: "#E87BA2", avatarEmoji: "👩" },
+        umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸" }
+      },
+      scenes: [
+        { type: "hook", text: "夫婦LINE、ちょっと\n険悪になる前に──", durationMs: 3000 },
+        { type: "message", speaker: "takashi", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1800 },
+        { type: "message", speaker: "akane", text: "……またなんだ", time: "18:43", durationMs: 1800 },
+        { type: "message", speaker: "takashi", text: "仕方ないだろ、仕事なんだから", time: "18:43", durationMs: 2000 },
+        { type: "caption", text: "ちょっと空気が重くなってきた…", durationMs: 1500 },
+        { type: "message", speaker: "akane", text: "わかってるけど、毎回それ言われると\n何も言えなくなる", time: "18:44", durationMs: 2500 },
+        { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+        { type: "message", speaker: "umeko", text: "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？", time: "18:44", durationMs: 4000 },
+        { type: "message", speaker: "takashi", text: "…水曜なら早く帰れるかも", time: "18:45", durationMs: 1800 },
+        { type: "message", speaker: "akane", text: "じゃあ水曜ごはん一緒に食べよ ☺️", time: "18:45", durationMs: 2000 },
+        { type: "ending", lines: ["言いづらいことを、やわらかく。", "うめこ", "LINEグループに追加するだけ"], durationMs: 4000 }
+      ]
+    };
+
+    let scenario = JSON.parse(JSON.stringify(DEFAULT_SCENARIO));
+    let editingMemberId = null;
+    let isPlaying = false;
+
+    // ==================== Render ====================
+    function render() {
+      renderMeta();
+      renderMembers();
+      renderScenes();
+      renderSaved();
+      updateDurationDisplay();
+    }
+
+    function renderMeta() {
+      document.getElementById('metaTitle').value = scenario.title;
+      document.getElementById('metaGroup').value = scenario.groupName;
+      document.getElementById('metaDuration').value = scenario.format.durationSec;
+      document.getElementById('metaFps').value = scenario.format.fps;
+    }
+
+    function updateMeta() {
+      scenario.title = document.getElementById('metaTitle').value;
+      scenario.groupName = document.getElementById('metaGroup').value;
+      scenario.format.durationSec = parseInt(document.getElementById('metaDuration').value) || 22;
+      scenario.format.fps = parseInt(document.getElementById('metaFps').value) || 30;
+    }
+
+    function renderMembers() {
+      const el = document.getElementById('memberList');
+      el.innerHTML = '';
+      for (const [id, m] of Object.entries(scenario.members)) {
+        const chip = document.createElement('div');
+        chip.className = 'member-chip';
+        chip.onclick = () => openMemberModal(id);
+        chip.innerHTML = `<span class="dot" style="background:${m.avatarColor}"></span>${m.avatarEmoji} ${m.name} <span style="color:#aaa;font-size:11px">(${m.side})</span>`;
+        el.appendChild(chip);
+      }
+    }
+
+    function renderScenes() {
+      const el = document.getElementById('sceneList');
+      el.innerHTML = '';
+      scenario.scenes.forEach((scene, i) => {
+        const card = document.createElement('div');
+        card.className = 'scene-card';
+        card.draggable = true;
+        card.dataset.index = i;
+        card.addEventListener('dragstart', onDragStart);
+        card.addEventListener('dragover', onDragOver);
+        card.addEventListener('drop', onDrop);
+        card.addEventListener('dragend', onDragEnd);
+
+        let bodyHtml = '';
+
+        // Type badge
+        const typeBadge = `<span class="scene-type-badge ${scene.type}">${scene.type}</span>`;
+
+        if (scene.type === 'message') {
+          const memberKeys = Object.keys(scenario.members);
+          const speakerOpts = memberKeys.map(k =>
+            `<option value="${k}" ${scene.speaker === k ? 'selected' : ''}>${scenario.members[k]?.name || k}</option>`
+          ).join('');
+
+          bodyHtml = `
+            <div class="scene-type-row">
+              ${typeBadge}
+              <span class="scene-speaker">${scenario.members[scene.speaker]?.name || scene.speaker}</span>
+              <span class="scene-duration">${scene.durationMs}ms</span>
+            </div>
+            <textarea class="scene-text-input" rows="2" oninput="updateSceneText(${i}, this.value)">${scene.text}</textarea>
+            <div class="scene-fields">
+              <select onchange="updateSceneSpeaker(${i}, this.value)">${speakerOpts}</select>
+              <input type="text" value="${scene.time || ''}" placeholder="時刻" style="width:70px" oninput="updateSceneField(${i},'time',this.value)">
+              <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
+              <span style="font-size:12px;color:#aaa">ms</span>
+            </div>`;
+        } else if (scene.type === 'hook') {
+          bodyHtml = `
+            <div class="scene-type-row">${typeBadge}<span class="scene-duration">${scene.durationMs}ms</span></div>
+            <textarea class="scene-text-input" rows="2" oninput="updateSceneText(${i}, this.value)">${scene.text}</textarea>
+            <div class="scene-fields">
+              <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
+              <span style="font-size:12px;color:#aaa">ms</span>
+            </div>`;
+        } else if (scene.type === 'caption') {
+          bodyHtml = `
+            <div class="scene-type-row">${typeBadge}<span class="scene-duration">${scene.durationMs}ms</span></div>
+            <textarea class="scene-text-input" rows="1" oninput="updateSceneText(${i}, this.value)">${scene.text}</textarea>
+            <div class="scene-fields">
+              <select onchange="updateSceneField(${i},'style',this.value)">
+                <option value="" ${!scene.style ? 'selected' : ''}>通常</option>
+                <option value="highlight" ${scene.style === 'highlight' ? 'selected' : ''}>強調(黄色)</option>
+              </select>
+              <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
+              <span style="font-size:12px;color:#aaa">ms</span>
+            </div>`;
+        } else if (scene.type === 'ending') {
+          const lines = scene.lines || ['', '', ''];
+          bodyHtml = `
+            <div class="scene-type-row">${typeBadge}<span class="scene-duration">${scene.durationMs}ms</span></div>
+            <input class="scene-text-input" value="${lines[0]}" placeholder="タグライン" oninput="updateEndingLine(${i},0,this.value)">
+            <input class="scene-text-input" value="${lines[1]}" placeholder="ブランド名" oninput="updateEndingLine(${i},1,this.value)">
+            <input class="scene-text-input" value="${lines[2]}" placeholder="CTA" oninput="updateEndingLine(${i},2,this.value)">
+            <div class="scene-fields">
+              <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
+              <span style="font-size:12px;color:#aaa">ms</span>
+            </div>`;
+        }
+
+        card.innerHTML = `
+          <span class="scene-num">${i + 1}</span>
+          <div class="scene-body">${bodyHtml}</div>
+          <div class="scene-actions">
+            <button class="move-btn" onclick="moveScene(${i},-1)" title="上へ">↑</button>
+            <button class="move-btn" onclick="moveScene(${i},1)" title="下へ">↓</button>
+            <button onclick="duplicateScene(${i})" title="複製" class="move-btn">⧉</button>
+            <button onclick="removeScene(${i})" title="削除">×</button>
+          </div>
+        `;
+        el.appendChild(card);
+      });
+
+      document.getElementById('sceneCount').textContent = scenario.scenes.length;
+    }
+
+    function updateDurationDisplay() {
+      const totalMs = scenario.scenes.reduce((sum, s) => sum + (s.durationMs || 0), 0);
+      const totalSec = (totalMs / 1000).toFixed(1);
+      document.getElementById('totalDuration').textContent = totalSec;
+      document.getElementById('previewDuration').textContent = `合計 ${totalSec}秒`;
+    }
+
+    // ==================== Scene ops ====================
+    function updateSceneText(i, val) { scenario.scenes[i].text = val; }
+    function updateSceneSpeaker(i, val) { scenario.scenes[i].speaker = val; renderScenes(); }
+    function updateSceneField(i, field, val) {
+      scenario.scenes[i][field] = val;
+      if (field === 'durationMs') updateDurationDisplay();
+    }
+    function updateEndingLine(i, lineIdx, val) {
+      if (!scenario.scenes[i].lines) scenario.scenes[i].lines = ['', '', ''];
+      scenario.scenes[i].lines[lineIdx] = val;
+    }
+
+    function addScene(type) {
+      const firstMember = Object.keys(scenario.members)[0] || 'takashi';
+      const templates = {
+        hook: { type: 'hook', text: 'ここにフックテキスト', durationMs: 3000 },
+        message: { type: 'message', speaker: firstMember, text: 'メッセージ内容', time: '18:00', durationMs: 2000 },
+        caption: { type: 'caption', text: 'テロップ内容', durationMs: 1500 },
+        ending: { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA'], durationMs: 4000 },
+      };
+      scenario.scenes.push(JSON.parse(JSON.stringify(templates[type])));
+      renderScenes();
+      updateDurationDisplay();
+      // Scroll to bottom
+      document.getElementById('sceneList').lastChild?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function removeScene(i) {
+      scenario.scenes.splice(i, 1);
+      renderScenes();
+      updateDurationDisplay();
+    }
+
+    function duplicateScene(i) {
+      const copy = JSON.parse(JSON.stringify(scenario.scenes[i]));
+      scenario.scenes.splice(i + 1, 0, copy);
+      renderScenes();
+      updateDurationDisplay();
+    }
+
+    function moveScene(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= scenario.scenes.length) return;
+      [scenario.scenes[i], scenario.scenes[j]] = [scenario.scenes[j], scenario.scenes[i]];
+      renderScenes();
+    }
+
+    // ==================== Drag & drop ====================
+    let dragIndex = null;
+    function onDragStart(e) {
+      dragIndex = parseInt(e.currentTarget.dataset.index);
+      e.currentTarget.classList.add('dragging');
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+    function onDrop(e) {
+      e.preventDefault();
+      const dropIndex = parseInt(e.currentTarget.dataset.index);
+      e.currentTarget.classList.remove('drag-over');
+      if (dragIndex !== null && dragIndex !== dropIndex) {
+        const [item] = scenario.scenes.splice(dragIndex, 1);
+        scenario.scenes.splice(dropIndex, 0, item);
+        renderScenes();
+      }
+      dragIndex = null;
+    }
+    function onDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('drag-over'));
+    }
+
+    // ==================== Members ====================
+    function openMemberModal(id) {
+      editingMemberId = id || null;
+      const modal = document.getElementById('memberModal');
+      if (id && scenario.members[id]) {
+        const m = scenario.members[id];
+        document.getElementById('memberModalTitle').textContent = 'メンバー編集';
+        document.getElementById('memId').value = id;
+        document.getElementById('memId').disabled = true;
+        document.getElementById('memName').value = m.name;
+        document.getElementById('memSide').value = m.side;
+        document.getElementById('memEmoji').value = m.avatarEmoji;
+        document.getElementById('memColor').value = m.avatarColor;
+        document.getElementById('memDeleteBtn').style.display = 'block';
+      } else {
+        document.getElementById('memberModalTitle').textContent = 'メンバー追加';
+        document.getElementById('memId').value = '';
+        document.getElementById('memId').disabled = false;
+        document.getElementById('memName').value = '';
+        document.getElementById('memSide').value = 'left';
+        document.getElementById('memEmoji').value = '';
+        document.getElementById('memColor').value = '#4A90D9';
+        document.getElementById('memDeleteBtn').style.display = 'none';
+      }
+      modal.classList.add('open');
+    }
+
+    function closeMemberModal() {
+      document.getElementById('memberModal').classList.remove('open');
+      editingMemberId = null;
+    }
+
+    function saveMember() {
+      const id = editingMemberId || document.getElementById('memId').value.trim();
+      if (!id) return alert('IDを入力してください');
+      scenario.members[id] = {
+        name: document.getElementById('memName').value || id,
+        side: document.getElementById('memSide').value,
+        avatarEmoji: document.getElementById('memEmoji').value || '👤',
+        avatarColor: document.getElementById('memColor').value,
+      };
+      closeMemberModal();
+      render();
+    }
+
+    function deleteMember() {
+      if (editingMemberId && confirm(`${editingMemberId} を削除しますか？`)) {
+        delete scenario.members[editingMemberId];
+        closeMemberModal();
+        render();
+      }
+    }
+
+    // ==================== Preview ====================
+    function getFrame() {
+      return document.getElementById('previewFrame');
+    }
+
+    function sendToPreview(action, data) {
+      getFrame().contentWindow.postMessage({ action, data }, '*');
+    }
+
+    function resetPreview() {
+      isPlaying = false;
+      document.getElementById('playBtn').textContent = '再生';
+      sendToPreview('reset');
+      sendToPreview('init', scenario);
+      document.getElementById('previewProgress').textContent = '';
+    }
+
+    async function playPreview() {
+      if (isPlaying) return;
+      isPlaying = true;
+      document.getElementById('playBtn').textContent = '再生中…';
+      document.getElementById('playBtn').disabled = true;
+
+      sendToPreview('reset');
+      sendToPreview('init', scenario);
+
+      await sleep(300);
+
+      for (let i = 0; i < scenario.scenes.length; i++) {
+        if (!isPlaying) break;
+        const scene = scenario.scenes[i];
+        document.getElementById('previewProgress').textContent = `${i + 1} / ${scenario.scenes.length}`;
+
+        sendToPreview('showScene', scene);
+        await sleep(scene.durationMs);
+
+        if (scene.type === 'hook' || scene.type === 'caption') {
+          sendToPreview('clearOverlays');
+          await sleep(400);
+        }
+      }
+
+      document.getElementById('playBtn').textContent = '再生';
+      document.getElementById('playBtn').disabled = false;
+      isPlaying = false;
+      document.getElementById('previewProgress').textContent = '完了';
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ==================== Save / Load ====================
+    function getSavedList() {
+      return JSON.parse(localStorage.getItem('umeko_scenarios') || '{}');
+    }
+
+    function saveScenario() {
+      updateMeta();
+      const name = scenario.title || 'untitled';
+      const saved = getSavedList();
+      saved[name] = JSON.parse(JSON.stringify(scenario));
+      localStorage.setItem('umeko_scenarios', JSON.stringify(saved));
+      renderSaved();
+      alert(`「${name}」を保存しました`);
+    }
+
+    function loadScenario(name) {
+      const saved = getSavedList();
+      if (saved[name]) {
+        scenario = JSON.parse(JSON.stringify(saved[name]));
+        render();
+        resetPreview();
+      }
+    }
+
+    function deleteSaved(name, e) {
+      e.stopPropagation();
+      if (!confirm(`「${name}」を削除しますか？`)) return;
+      const saved = getSavedList();
+      delete saved[name];
+      localStorage.setItem('umeko_scenarios', JSON.stringify(saved));
+      renderSaved();
+    }
+
+    function renderSaved() {
+      const el = document.getElementById('savedList');
+      const saved = getSavedList();
+      const keys = Object.keys(saved);
+      if (keys.length === 0) {
+        el.innerHTML = '<div style="font-size:13px;color:#aaa;padding:8px">保存済みシナリオはありません</div>';
+        return;
+      }
+      el.innerHTML = keys.map(name => `
+        <div class="saved-item" onclick="loadScenario('${name.replace(/'/g, "\\'")}')">
+          <span>${name}</span>
+          <div class="saved-item-actions">
+            <button onclick="deleteSaved('${name.replace(/'/g, "\\'")}', event)">削除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function newScenario() {
+      if (!confirm('現在の編集内容は失われます。新規シナリオを作成しますか？')) return;
+      scenario = JSON.parse(JSON.stringify(DEFAULT_SCENARIO));
+      scenario.title = '新規シナリオ';
+      scenario.scenes = [
+        { type: 'hook', text: 'ここにフックテキスト', durationMs: 3000 },
+        { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA'], durationMs: 4000 },
+      ];
+      render();
+      resetPreview();
+    }
+
+    // ==================== Export / Import ====================
+    function exportJSON() {
+      updateMeta();
+      const blob = new Blob([JSON.stringify(scenario, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (scenario.title || 'scenario') + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON() {
+      document.getElementById('importFile').click();
+    }
+
+    function handleImport(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (!data.scenes || !data.members) throw new Error('Invalid format');
+          scenario = data;
+          render();
+          resetPreview();
+          alert('インポートしました');
+        } catch (err) {
+          alert('JSONの読み込みに失敗しました: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    // ==================== Init ====================
+    window.addEventListener('load', () => {
+      // Load default scenario from file, or use built-in
+      fetch('./scenario.json')
+        .then(r => r.json())
+        .then(data => {
+          scenario = data;
+          render();
+          // Init preview iframe after it loads
+          getFrame().addEventListener('load', () => {
+            sendToPreview('init', scenario);
+          });
+        })
+        .catch(() => {
+          render();
+          getFrame().addEventListener('load', () => {
+            sendToPreview('init', scenario);
+          });
+        });
+    });
+  </script>
+</body>
+</html>
