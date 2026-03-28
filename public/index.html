@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>うめこ動画エディタ</title>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     :root {
       --bg: #f5f5f0;
@@ -11,8 +12,8 @@
       --border: #e0ddd5;
       --text: #333;
       --text-sub: #888;
-      --accent: #E8913A;
-      --accent-light: #FFF3E0;
+      --accent: #06C755;
+      --accent-light: #E8F5E9;
       --danger: #e55;
       --radius: 10px;
     }
@@ -25,8 +26,6 @@
       height: 100vh;
       overflow: hidden;
     }
-
-    /* === Left: Editor === */
     .editor {
       flex: 1;
       overflow-y: auto;
@@ -36,20 +35,9 @@
       gap: 20px;
       min-width: 0;
     }
-    .editor h1 {
-      font-size: 22px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .editor h1 { font-size: 22px; display: flex; align-items: center; gap: 10px; }
     .editor h1 span { font-size: 28px; }
-
-    /* Toolbar */
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
     .toolbar button, .toolbar select {
       padding: 8px 16px;
       border: 1px solid var(--border);
@@ -60,14 +48,11 @@
       transition: all 0.15s;
     }
     .toolbar button:hover { background: var(--accent-light); border-color: var(--accent); }
-    .toolbar .btn-primary {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
+    .toolbar .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .toolbar .btn-primary:hover { opacity: 0.85; }
-
-    /* Scenario meta */
+    .toolbar .btn-record { background: #d64545; color: #fff; border-color: #d64545; }
+    .toolbar .btn-record:hover { opacity: 0.85; }
+    .toolbar .btn-record:disabled { opacity: 0.5; cursor: default; }
     .meta-section {
       background: var(--card);
       border: 1px solid var(--border);
@@ -78,339 +63,182 @@
       gap: 12px;
     }
     .meta-section h2 { font-size: 15px; color: var(--text-sub); }
-    .meta-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .meta-row label {
-      font-size: 13px;
-      color: var(--text-sub);
-      min-width: 80px;
-    }
+    .meta-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .meta-row label { font-size: 13px; color: var(--text-sub); min-width: 80px; }
     .meta-row input, .meta-row select {
-      flex: 1;
-      min-width: 100px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
+      flex: 1; min-width: 100px; padding: 6px 10px;
+      border: 1px solid var(--border); border-radius: 6px; font-size: 14px;
     }
-
-    /* Members */
-    .member-list {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .member-list { display: flex; gap: 8px; flex-wrap: wrap; }
     .member-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: var(--accent-light);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      font-size: 13px;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; background: var(--accent-light);
+      border: 1px solid var(--border); border-radius: 20px;
+      font-size: 13px; cursor: pointer;
     }
     .member-chip:hover { border-color: var(--accent); }
-    .member-chip .dot {
-      width: 12px; height: 12px; border-radius: 50%;
-    }
-
-    /* Scene list */
-    .scene-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .member-chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .scene-list { display: flex; flex-direction: column; gap: 8px; }
     .scene-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      transition: box-shadow 0.15s;
-      cursor: grab;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+      transition: box-shadow 0.15s; cursor: grab;
     }
     .scene-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
     .scene-card.dragging { opacity: 0.5; }
     .scene-card.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
     .scene-num {
-      font-size: 12px;
-      color: var(--text-sub);
-      background: var(--bg);
-      border-radius: 4px;
-      padding: 2px 8px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      margin-top: 2px;
+      font-size: 12px; color: var(--text-sub); background: var(--bg);
+      border-radius: 4px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; margin-top: 2px;
     }
     .scene-body { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-    .scene-type-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .scene-type-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-    }
+    .scene-type-row { display: flex; gap: 8px; align-items: center; }
+    .scene-type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
     .scene-type-badge.hook { background: #E3F2FD; color: #1565C0; }
     .scene-type-badge.message { background: #E8F5E9; color: #2E7D32; }
     .scene-type-badge.caption { background: #FFF3E0; color: #E65100; }
     .scene-type-badge.ending { background: #FCE4EC; color: #AD1457; }
-
-    .scene-speaker {
-      font-size: 12px;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .scene-duration {
-      font-size: 12px;
-      color: var(--text-sub);
-      margin-left: auto;
-    }
+    .scene-speaker { font-size: 12px; color: var(--accent); font-weight: 600; }
+    .scene-duration { font-size: 12px; color: var(--text-sub); margin-left: auto; }
     .scene-text-input {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 14px;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 36px;
-      line-height: 1.5;
+      width: 100%; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 14px; font-family: inherit;
+      resize: vertical; min-height: 36px; line-height: 1.5;
     }
     .scene-text-input:focus { outline: none; border-color: var(--accent); }
-
-    .scene-fields {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+    .scene-fields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .scene-fields select, .scene-fields input {
-      padding: 4px 8px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 13px;
+      padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
     }
-    .scene-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex-shrink: 0;
-    }
+    .scene-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
     .scene-actions button {
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--card);
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card); cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
     }
     .scene-actions button:hover { background: #fee; border-color: var(--danger); }
     .scene-actions .move-btn:hover { background: var(--accent-light); border-color: var(--accent); }
-
-    /* Add scene */
-    .add-scene-bar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    .add-scene-bar { display: flex; gap: 8px; flex-wrap: wrap; }
     .add-scene-bar button {
-      padding: 8px 16px;
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      background: transparent;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--text-sub);
-      transition: all 0.15s;
+      padding: 8px 16px; border: 2px dashed var(--border); border-radius: var(--radius);
+      background: transparent; font-size: 13px; cursor: pointer; color: var(--text-sub); transition: all 0.15s;
     }
-    .add-scene-bar button:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--accent-light);
-    }
+    .add-scene-bar button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-    /* Member editor modal */
+    /* Preset selector */
+    .preset-section {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;
+    }
+    .preset-section h2 { font-size: 15px; color: var(--text-sub); margin-bottom: 10px; }
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .preset-btn {
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); font-size: 13px; cursor: pointer; text-align: left;
+      transition: all 0.15s; line-height: 1.4;
+    }
+    .preset-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+    .preset-btn .preset-icon { margin-right: 6px; }
+
+    /* Modal */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.3);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.3); z-index: 1000; align-items: center; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
     .modal {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 24px;
-      min-width: 380px;
-      max-width: 90vw;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      background: var(--card); border-radius: 16px; padding: 24px;
+      min-width: 380px; max-width: 90vw; box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
     .modal h3 { margin-bottom: 16px; font-size: 18px; }
-    .modal .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 12px;
-    }
+    .modal .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     .modal .field label { font-size: 13px; color: var(--text-sub); }
     .modal .field input, .modal .field select {
-      padding: 8px 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
+      padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;
     }
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 16px;
-    }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
     .modal-actions button {
-      padding: 8px 20px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card);
-      font-size: 14px;
-      cursor: pointer;
+      padding: 8px 20px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--card); font-size: 14px; cursor: pointer;
     }
-    .modal-actions .btn-save {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
-    .modal-actions .btn-delete {
-      background: var(--danger);
-      color: #fff;
-      border-color: var(--danger);
-      margin-right: auto;
-    }
+    .modal-actions .btn-save { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .modal-actions .btn-delete { background: var(--danger); color: #fff; border-color: var(--danger); margin-right: auto; }
 
-    /* === Right: Preview === */
+    /* Preview */
     .preview-panel {
-      width: 380px;
-      flex-shrink: 0;
-      background: #2a2a2a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px;
-      gap: 12px;
+      width: 380px; flex-shrink: 0; background: #2a2a2a;
+      display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 12px;
     }
-    .preview-label {
-      color: #aaa;
-      font-size: 13px;
-      font-weight: 600;
-    }
+    .preview-label { color: #aaa; font-size: 13px; font-weight: 600; }
     .preview-phone {
-      width: 270px;
-      height: 480px;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 3px solid #444;
-      background: #000;
-      position: relative;
+      width: 270px; height: 480px; border-radius: 24px; overflow: hidden;
+      border: 3px solid #444; background: #000; position: relative;
     }
     .preview-phone iframe {
-      width: 1080px;
-      height: 1920px;
-      border: none;
-      transform: scale(0.25);
-      transform-origin: top left;
+      width: 1080px; height: 1920px; border: none; transform: scale(0.25); transform-origin: top left;
     }
-    .preview-controls {
-      display: flex;
-      gap: 8px;
-    }
+    .preview-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
     .preview-controls button {
-      padding: 8px 20px;
-      border: none;
-      border-radius: var(--radius);
-      background: var(--accent);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
+      padding: 8px 20px; border: none; border-radius: var(--radius);
+      background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
     }
     .preview-controls button:hover { opacity: 0.85; }
     .preview-controls button:disabled { opacity: 0.4; cursor: default; }
-    .preview-progress {
-      color: #aaa;
-      font-size: 12px;
-      text-align: center;
-    }
-    .total-duration {
-      color: #ccc;
-      font-size: 13px;
-      font-weight: 600;
-    }
+    .preview-progress { color: #aaa; font-size: 12px; text-align: center; }
+    .total-duration { color: #ccc; font-size: 13px; font-weight: 600; }
 
-    /* Saved list */
-    .saved-section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
+    /* Saved */
+    .saved-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
     .saved-section h2 { font-size: 15px; color: var(--text-sub); margin-bottom: 10px; }
     .saved-list { display: flex; flex-direction: column; gap: 6px; }
     .saved-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      background: var(--bg);
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.15s;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg); border-radius: 6px;
+      font-size: 14px; cursor: pointer; transition: background 0.15s;
     }
     .saved-item:hover { background: var(--accent-light); }
     .saved-item-actions { display: flex; gap: 4px; }
     .saved-item-actions button {
-      padding: 4px 8px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--card);
-      font-size: 12px;
-      cursor: pointer;
+      padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--card); font-size: 12px; cursor: pointer;
     }
-    .saved-item-actions button:hover { border-color: var(--danger); }
+
+    /* Recording overlay */
+    .record-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); z-index: 2000;
+      align-items: center; justify-content: center; flex-direction: column; gap: 20px;
+    }
+    .record-overlay.active { display: flex; }
+    .record-overlay .rec-status {
+      color: #fff; font-size: 24px; font-weight: 700;
+    }
+    .record-overlay .rec-dot {
+      display: inline-block; width: 16px; height: 16px;
+      background: #f44; border-radius: 50%; margin-right: 10px;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .record-overlay .rec-progress { color: #ccc; font-size: 16px; }
   </style>
 </head>
 <body>
-  <!-- Editor Panel -->
   <div class="editor" id="editorPanel">
     <h1><span>🌸</span> うめこ動画エディタ</h1>
 
-    <!-- Toolbar -->
     <div class="toolbar">
       <button class="btn-primary" onclick="playPreview()">再生</button>
+      <button class="btn-record" onclick="recordAndDownload()" id="recordBtn">録画してダウンロード</button>
       <button onclick="resetPreview()">リセット</button>
       <button onclick="saveScenario()">保存</button>
-      <button onclick="exportJSON()">JSONエクスポート</button>
-      <button onclick="importJSON()">JSONインポート</button>
-      <button onclick="newScenario()">新規シナリオ</button>
+      <button onclick="exportJSON()">JSON出力</button>
+      <button onclick="importJSON()">JSON読込</button>
+    </div>
+
+    <!-- Presets -->
+    <div class="preset-section">
+      <h2>シナリオテンプレート</h2>
+      <div class="preset-grid" id="presetGrid"></div>
     </div>
 
     <!-- Meta -->
@@ -423,12 +251,6 @@
       <div class="meta-row">
         <label>グループ名</label>
         <input type="text" id="metaGroup" oninput="updateMeta()">
-      </div>
-      <div class="meta-row">
-        <label>尺(秒)</label>
-        <input type="number" id="metaDuration" value="22" style="width:80px" oninput="updateMeta()">
-        <label>FPS</label>
-        <input type="number" id="metaFps" value="30" style="width:60px" oninput="updateMeta()">
       </div>
     </div>
 
@@ -451,7 +273,7 @@
       </div>
     </div>
 
-    <!-- Saved scenarios -->
+    <!-- Saved -->
     <div class="saved-section">
       <h2>保存済みシナリオ</h2>
       <div class="saved-list" id="savedList"></div>
@@ -472,33 +294,28 @@
     <div class="total-duration" id="previewDuration"></div>
   </div>
 
+  <!-- Recording iframe (full size, off-screen) -->
+  <iframe id="recordFrame" src="chat.html" style="position:fixed;left:-9999px;top:0;width:1080px;height:1920px;border:none;"></iframe>
+
+  <!-- Recording overlay -->
+  <div class="record-overlay" id="recordOverlay">
+    <div class="rec-status"><span class="rec-dot"></span>録画中…</div>
+    <div class="rec-progress" id="recProgress"></div>
+  </div>
+
   <!-- Member modal -->
   <div class="modal-overlay" id="memberModal">
     <div class="modal">
       <h3 id="memberModalTitle">メンバー編集</h3>
-      <div class="field">
-        <label>ID (英数字)</label>
-        <input type="text" id="memId" placeholder="例: takashi">
-      </div>
-      <div class="field">
-        <label>表示名</label>
-        <input type="text" id="memName" placeholder="例: たかし">
-      </div>
+      <div class="field"><label>ID (英数字)</label><input type="text" id="memId" placeholder="例: takashi"></div>
+      <div class="field"><label>表示名</label><input type="text" id="memName" placeholder="例: たかし"></div>
       <div class="field">
         <label>吹き出し位置</label>
-        <select id="memSide">
-          <option value="left">左 (相手)</option>
-          <option value="right">右 (自分)</option>
-        </select>
+        <select id="memSide"><option value="left">左 (相手)</option><option value="right">右 (自分)</option></select>
       </div>
-      <div class="field">
-        <label>アイコン絵文字</label>
-        <input type="text" id="memEmoji" placeholder="例: 👨">
-      </div>
-      <div class="field">
-        <label>アイコン背景色</label>
-        <input type="color" id="memColor" value="#4A90D9">
-      </div>
+      <div class="field"><label>アイコン絵文字</label><input type="text" id="memEmoji" placeholder="例: 👨"></div>
+      <div class="field"><label>アイコン背景色</label><input type="color" id="memColor" value="#4A90D9"></div>
+      <div class="field"><label>アイコン画像URL (任意)</label><input type="text" id="memImage" placeholder="例: umeko-icon.png"></div>
       <div class="modal-actions">
         <button class="btn-delete" id="memDeleteBtn" onclick="deleteMember()" style="display:none">削除</button>
         <button onclick="closeMemberModal()">キャンセル</button>
@@ -507,38 +324,291 @@
     </div>
   </div>
 
-  <!-- Import modal -->
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
 
   <script>
-    // ==================== State ====================
-    const DEFAULT_SCENARIO = {
-      title: "夫婦LINE - うめこ介入篇",
-      format: { width: 1080, height: 1920, fps: 30, durationSec: 22 },
-      groupName: "家族グループ",
-      members: {
-        takashi: { name: "たかし", side: "left", avatarColor: "#4A90D9", avatarEmoji: "👨" },
-        akane: { name: "あかね", side: "right", avatarColor: "#E87BA2", avatarEmoji: "👩" },
-        umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸" }
-      },
-      scenes: [
-        { type: "hook", text: "夫婦LINE、ちょっと\n険悪になる前に──", durationMs: 3000 },
-        { type: "message", speaker: "takashi", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1800 },
-        { type: "message", speaker: "akane", text: "……またなんだ", time: "18:43", durationMs: 1800 },
-        { type: "message", speaker: "takashi", text: "仕方ないだろ、仕事なんだから", time: "18:43", durationMs: 2000 },
-        { type: "caption", text: "ちょっと空気が重くなってきた…", durationMs: 1500 },
-        { type: "message", speaker: "akane", text: "わかってるけど、毎回それ言われると\n何も言えなくなる", time: "18:44", durationMs: 2500 },
-        { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
-        { type: "message", speaker: "umeko", text: "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？", time: "18:44", durationMs: 4000 },
-        { type: "message", speaker: "takashi", text: "…水曜なら早く帰れるかも", time: "18:45", durationMs: 1800 },
-        { type: "message", speaker: "akane", text: "じゃあ水曜ごはん一緒に食べよ ☺️", time: "18:45", durationMs: 2000 },
-        { type: "ending", lines: ["言いづらいことを、やわらかく。", "うめこ", "LINEグループに追加するだけ"], durationMs: 4000 }
-      ]
+    // ==================== Umeko members (shared) ====================
+    const UMEKO_MEMBERS = {
+      husband: { name: "たかし", side: "left", avatarColor: "#4A90D9", avatarEmoji: "👨" },
+      wife: { name: "あかね", side: "right", avatarColor: "#E87BA2", avatarEmoji: "👩" },
+      umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
     };
+    const ENDING_DEFAULT = ["言いづらいことを、やわらかく。", "うめこ", "LINEグループに追加するだけ", "umeko.life"];
 
-    let scenario = JSON.parse(JSON.stringify(DEFAULT_SCENARIO));
+    // ==================== 10 Preset Scenarios ====================
+    const PRESETS = [
+      {
+        label: "👫 夫婦で帰宅時間もめる",
+        scenario: {
+          title: "夫婦LINE - 帰宅時間篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "家族グループ",
+          members: { ...UMEKO_MEMBERS },
+          scenes: [
+            { type: "hook", text: "夫婦LINE、ちょっと\n険悪になる前に──", durationMs: 3000 },
+            { type: "message", speaker: "husband", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1800 },
+            { type: "message", speaker: "wife", text: "……またなんだ", time: "18:43", durationMs: 1800 },
+            { type: "message", speaker: "husband", text: "仕方ないだろ、仕事なんだから", time: "18:43", durationMs: 2000 },
+            { type: "caption", text: "ちょっと空気が重くなってきた…", durationMs: 1500 },
+            { type: "message", speaker: "wife", text: "わかってるけど、毎回それ言われると\n何も言えなくなる", time: "18:44", durationMs: 2500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？", time: "18:44", durationMs: 4000 },
+            { type: "message", speaker: "husband", text: "…水曜なら早く帰れるかも", time: "18:45", durationMs: 1800 },
+            { type: "message", speaker: "wife", text: "じゃあ水曜ごはん一緒に食べよ ☺️", time: "18:45", durationMs: 2000 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "🧹 夫婦で家事分担もめる",
+        scenario: {
+          title: "夫婦LINE - 家事分担篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "家族グループ",
+          members: { ...UMEKO_MEMBERS },
+          scenes: [
+            { type: "hook", text: "「なんで私ばっかり」\nって思ったこと、ない？", durationMs: 3000 },
+            { type: "message", speaker: "wife", text: "ねえ、ゴミ出しお願いって\n昨日言ったよね？", time: "20:11", durationMs: 2000 },
+            { type: "message", speaker: "husband", text: "あ、忘れてた\nごめんごめん", time: "20:12", durationMs: 1800 },
+            { type: "message", speaker: "wife", text: "毎回「ごめん」で終わるよね\nもういいけど", time: "20:12", durationMs: 2200 },
+            { type: "caption", text: "「もういい」は全然よくない…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "あかねさんは繰り返しお願いするのが\nしんどいんですよね。\nたかしさん、スマホのリマインダーに\n\"ゴミ出し\"を毎週セットしておくのは\nどうですか？ 🕐", time: "20:13", durationMs: 4000 },
+            { type: "message", speaker: "husband", text: "たしかに、それならいけるわ\n今セットした", time: "20:14", durationMs: 2000 },
+            { type: "message", speaker: "wife", text: "…ありがと 😊", time: "20:14", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "😶 既読無視で空気が悪くなる",
+        scenario: {
+          title: "夫婦LINE - 既読スルー篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "家族グループ",
+          members: { ...UMEKO_MEMBERS },
+          scenes: [
+            { type: "hook", text: "既読ついたのに\n返事がこない──", durationMs: 3000 },
+            { type: "message", speaker: "wife", text: "今週の土曜、実家行くけどいい？", time: "12:30", durationMs: 2000 },
+            { type: "caption", text: "既読 12:31 ─── 3時間経過", durationMs: 2000 },
+            { type: "message", speaker: "wife", text: "……見てるよね？", time: "15:45", durationMs: 2000 },
+            { type: "message", speaker: "husband", text: "ごめん会議だった\n土曜ね、了解", time: "15:50", durationMs: 2000 },
+            { type: "message", speaker: "wife", text: "一言「あとで返す」って\n言えないの？", time: "15:51", durationMs: 2000 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "たかしさんは忙しかったんですね。\nあかねさんは返事がないと\n不安になりますよね 😌\n忙しいときは「あとで返すね」の\n一言があると安心しますよ", time: "15:52", durationMs: 4000 },
+            { type: "message", speaker: "husband", text: "たしかに。次からそうする", time: "15:53", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "📝 長文で責められて返信に困る",
+        scenario: {
+          title: "夫婦LINE - 長文篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "家族グループ",
+          members: { ...UMEKO_MEMBERS },
+          scenes: [
+            { type: "hook", text: "長文LINEが来て\n固まったこと、ある？", durationMs: 3000 },
+            { type: "message", speaker: "wife", text: "最近ずっと思ってたんだけど、\n私の話ちゃんと聞いてる？\nいつもスマホ見ながらだし、\n返事も適当だし、正直\n大事にされてる感じがしない。", time: "22:10", durationMs: 3000 },
+            { type: "caption", text: "なんて返せば……", durationMs: 1500 },
+            { type: "message", speaker: "husband", text: "え、そんなつもりないけど…", time: "22:15", durationMs: 2000 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "あかねさんはずっと\n溜めてたんですね。\nたかしさん、まずは\n\"そう感じさせてたんだね、ごめん\"\nって受け止めてみませんか？ 😌\n解決は、その後でも大丈夫です", time: "22:16", durationMs: 4000 },
+            { type: "message", speaker: "husband", text: "…そう感じさせてたんだな、ごめん\n話聞かせて", time: "22:18", durationMs: 2200 },
+            { type: "message", speaker: "wife", text: "……ありがとう", time: "22:19", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "💼 仕事グループで催促しづらい",
+        scenario: {
+          title: "仕事LINE - 催促篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "プロジェクトA",
+          members: {
+            sato: { name: "佐藤", side: "right", avatarColor: "#5C6BC0", avatarEmoji: "👔" },
+            tanaka: { name: "田中", side: "left", avatarColor: "#78909C", avatarEmoji: "🧑" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "催促したいけど\n言い方がむずかしい──", durationMs: 3000 },
+            { type: "message", speaker: "sato", text: "田中さん、先週お願いした\n資料ってどうなってますか？", time: "14:20", durationMs: 2000 },
+            { type: "caption", text: "既読 14:21 ─── 返事なし", durationMs: 2000 },
+            { type: "message", speaker: "sato", text: "明日の会議で使うので\n今日中にいただけると…", time: "16:30", durationMs: 2000 },
+            { type: "message", speaker: "tanaka", text: "すみません、対応します", time: "16:45", durationMs: 1800 },
+            { type: "caption", text: "ちょっと空気が固い…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "佐藤さん、お急ぎですよね。\n田中さんも抱えてるタスクが\nあるかもしれません 😌\n\"もし手が回らなければ\n一部こちらで巻き取りますよ\"\nと伝えるとスムーズですよ", time: "16:46", durationMs: 4000 },
+            { type: "message", speaker: "sato", text: "田中さん、もし厳しければ\n一部こっちでやるので言ってね", time: "16:47", durationMs: 2000 },
+            { type: "message", speaker: "tanaka", text: "ありがとうございます！\n半分お願いしてもいいですか？", time: "16:48", durationMs: 2000 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "😤 部下に注意したいが強く言いたくない",
+        scenario: {
+          title: "仕事LINE - 注意篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "チームB",
+          members: {
+            manager: { name: "鈴木(上司)", side: "right", avatarColor: "#6D4C41", avatarEmoji: "👨‍💼" },
+            junior: { name: "山田", side: "left", avatarColor: "#66BB6A", avatarEmoji: "🧑‍💻" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "注意したい。\nでも言い方がわからない──", durationMs: 3000 },
+            { type: "message", speaker: "manager", text: "山田くん、今日の報告書\nミスが3箇所あったよ", time: "17:30", durationMs: 2000 },
+            { type: "message", speaker: "junior", text: "すみません…\n気をつけます", time: "17:31", durationMs: 1800 },
+            { type: "message", speaker: "manager", text: "先週も同じこと言ったよね？", time: "17:31", durationMs: 2000 },
+            { type: "caption", text: "正論だけど、これ以上は萎縮する…", durationMs: 1800 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "鈴木さんの伝えたいこと、\nわかります 😌\nでも\"どこを確認すれば防げたか\"\nを一緒に考える形にすると\n山田さんも次に活かしやすいですよ", time: "17:32", durationMs: 4000 },
+            { type: "message", speaker: "manager", text: "山田くん、提出前に\nここチェックリストで確認してみて\n一緒に仕組み作ろう", time: "17:33", durationMs: 2200 },
+            { type: "message", speaker: "junior", text: "はい！やってみます！", time: "17:34", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "📅 友達同士で予定調整がギスる",
+        scenario: {
+          title: "友達LINE - 予定調整篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "大学メンバー",
+          members: {
+            yui: { name: "ゆい", side: "right", avatarColor: "#AB47BC", avatarEmoji: "👱‍♀️" },
+            mika: { name: "みか", side: "left", avatarColor: "#26A69A", avatarEmoji: "👩‍🦱" },
+            risa: { name: "りさ", side: "left", avatarColor: "#EF5350", avatarEmoji: "👧" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "グループの予定調整、\n誰かがいつもモヤる──", durationMs: 3000 },
+            { type: "message", speaker: "yui", text: "来週の飲み会、土曜でいい？", time: "19:00", durationMs: 1800 },
+            { type: "message", speaker: "mika", text: "私は金曜がいいんだけど…", time: "19:02", durationMs: 1800 },
+            { type: "message", speaker: "risa", text: "え〜もう土曜で決まりでよくない？\n合わせてよ", time: "19:03", durationMs: 2200 },
+            { type: "caption", text: "ちょっとトゲが立ってきた…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "みんな楽しみにしてるからこそ\nですよね 😌\n調整さん（日程調整ツール）で\n候補日を出し合うとスムーズですよ。\nどの日でも来れる人で楽しみましょう", time: "19:04", durationMs: 4000 },
+            { type: "message", speaker: "risa", text: "たしかに！ごめんね、\n決めつけちゃって", time: "19:05", durationMs: 2000 },
+            { type: "message", speaker: "mika", text: "全然！調整さん送るね〜", time: "19:05", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "🏫 ママ友連絡で言い方に困る",
+        scenario: {
+          title: "ママ友LINE - 連絡篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "2年3組 保護者",
+          members: {
+            mamaa: { name: "高橋ママ", side: "right", avatarColor: "#F48FB1", avatarEmoji: "👩" },
+            mamab: { name: "中村ママ", side: "left", avatarColor: "#4DB6AC", avatarEmoji: "👩‍🦰" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "ママ友LINE、\n言い方ひとつが命取り──", durationMs: 3000 },
+            { type: "message", speaker: "mamab", text: "今度のバザー、高橋さんの\n担当分まだですか？\nもう締切過ぎてるんですけど", time: "10:00", durationMs: 2500 },
+            { type: "message", speaker: "mamaa", text: "すみません、子どもが体調崩してて\nバタバタしてました…", time: "10:05", durationMs: 2200 },
+            { type: "message", speaker: "mamab", text: "みんな忙しい中やってるので…", time: "10:06", durationMs: 2000 },
+            { type: "caption", text: "正論だけどキツい…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "中村さん、まとめ役\nお疲れさまです 😌\n高橋さんも大変な状況ですね。\n\"今週中に難しければ\nこちらで一部引き取りますよ\"\nとお声がけするとお互い楽ですよ", time: "10:07", durationMs: 4000 },
+            { type: "message", speaker: "mamab", text: "そうですね、高橋さん\n無理しないでくださいね\n一部こちらでやりますので", time: "10:08", durationMs: 2200 },
+            { type: "message", speaker: "mamaa", text: "ありがとうございます😭\n明後日までに必ず出します！", time: "10:09", durationMs: 2000 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "💕 カップルで「怒ってる？」が始まる",
+        scenario: {
+          title: "カップルLINE - 怒ってる？篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "ふたりのトーク",
+          members: {
+            bf: { name: "れん", side: "left", avatarColor: "#42A5F5", avatarEmoji: "🧑" },
+            gf: { name: "ひな", side: "right", avatarColor: "#EC407A", avatarEmoji: "👩" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "「怒ってる？」「別に」\nこのループ、終わらせたい──", durationMs: 3000 },
+            { type: "message", speaker: "bf", text: "今日楽しかったね", time: "22:00", durationMs: 1800 },
+            { type: "message", speaker: "gf", text: "うん", time: "22:01", durationMs: 1500 },
+            { type: "message", speaker: "bf", text: "え、怒ってる？", time: "22:02", durationMs: 1800 },
+            { type: "message", speaker: "gf", text: "別に怒ってないけど", time: "22:02", durationMs: 1800 },
+            { type: "caption", text: "「別に」は絶対怒ってる…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "ひなさん、もしかして\n今日なにか引っかかったこと\nありましたか？ 😌\nれんさんは聞きたいと思ってますよ。\n\"何があった？\"って\n具体的に聞くと話しやすいかも", time: "22:03", durationMs: 4000 },
+            { type: "message", speaker: "bf", text: "なんかごめん、\n今日なにか嫌なことあった？", time: "22:04", durationMs: 2000 },
+            { type: "message", speaker: "gf", text: "…途中でスマホばっか見てたの\nちょっと寂しかった", time: "22:05", durationMs: 2200 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "🏨 スタッフ連絡でトゲが立つ",
+        scenario: {
+          title: "仕事LINE - スタッフ連絡篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "〇〇旅館 スタッフ",
+          members: {
+            owner: { name: "オーナー", side: "right", avatarColor: "#8D6E63", avatarEmoji: "👨‍💼" },
+            staff: { name: "田村", side: "left", avatarColor: "#7986CB", avatarEmoji: "🧑" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "言い方ひとつで\nスタッフの士気が変わる──", durationMs: 3000 },
+            { type: "message", speaker: "owner", text: "田村さん、305号室の\n清掃チェックしてないよね？\n昨日もお客様から指摘あったよ", time: "09:00", durationMs: 2500 },
+            { type: "message", speaker: "staff", text: "すみません、\nチェックしたつもりだったんですが…", time: "09:05", durationMs: 2000 },
+            { type: "message", speaker: "owner", text: "「つもり」じゃ困るんだけど", time: "09:05", durationMs: 2000 },
+            { type: "caption", text: "正論だけど、これじゃ萎縮する…", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "オーナーの品質へのこだわり、\n大事ですよね 😌\n田村さんも頑張ってるはず。\n\"チェックリストを一緒に見直して、\n抜けやすいポイントを確認しませんか\"\nと提案してみるのはどうですか？", time: "09:06", durationMs: 4000 },
+            { type: "message", speaker: "owner", text: "そうだね。田村さん、\n午後にチェックリスト一緒に\n見直そうか", time: "09:07", durationMs: 2200 },
+            { type: "message", speaker: "staff", text: "はい！お願いします！", time: "09:08", durationMs: 1800 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      },
+      {
+        label: "👨‍👩‍👧 家族LINEで温度差が出る",
+        scenario: {
+          title: "家族LINE - 温度差篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          groupName: "田中家",
+          members: {
+            mom: { name: "お母さん", side: "right", avatarColor: "#E91E63", avatarEmoji: "👩" },
+            son: { name: "けんた", side: "left", avatarColor: "#42A5F5", avatarEmoji: "🧑" },
+            daughter: { name: "みさき", side: "left", avatarColor: "#AB47BC", avatarEmoji: "👧" },
+            umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
+          },
+          scenes: [
+            { type: "hook", text: "家族LINE、\n温度差がちょっとツラい──", durationMs: 3000 },
+            { type: "message", speaker: "mom", text: "お盆はみんなで帰ってきてね！\nおばあちゃんも楽しみにしてるよ😊", time: "10:00", durationMs: 2200 },
+            { type: "message", speaker: "daughter", text: "行く行く〜！楽しみ！", time: "10:05", durationMs: 1800 },
+            { type: "caption", text: "けんた ── 既読スルー", durationMs: 2000 },
+            { type: "message", speaker: "mom", text: "けんた？", time: "14:00", durationMs: 1500 },
+            { type: "message", speaker: "son", text: "ちょっとわかんない\nまた連絡する", time: "14:30", durationMs: 2000 },
+            { type: "message", speaker: "mom", text: "…そう", time: "14:31", durationMs: 1500 },
+            { type: "caption", text: "そこに、うめこが──", style: "highlight", durationMs: 1500 },
+            { type: "message", speaker: "umeko", text: "お母さん、寂しいですよね 😌\nけんたさんも予定が\nまだ見えないだけかも。\n\"決まったら教えてね、\n無理しなくていいからね\"\nって添えると返事しやすいですよ", time: "14:32", durationMs: 4000 },
+            { type: "message", speaker: "mom", text: "けんた、無理しなくていいからね\n決まったら教えて😊", time: "14:33", durationMs: 2000 },
+            { type: "message", speaker: "son", text: "ありがと\n8/12-14なら行けそう", time: "14:40", durationMs: 2000 },
+            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+          ]
+        }
+      }
+    ];
+
+    // ==================== State ====================
+    let scenario = JSON.parse(JSON.stringify(PRESETS[0].scenario));
     let editingMemberId = null;
     let isPlaying = false;
+    let isRecording = false;
 
     // ==================== Render ====================
     function render() {
@@ -546,21 +616,31 @@
       renderMembers();
       renderScenes();
       renderSaved();
+      renderPresets();
       updateDurationDisplay();
+    }
+
+    function renderPresets() {
+      const el = document.getElementById('presetGrid');
+      el.innerHTML = PRESETS.map((p, i) => `
+        <button class="preset-btn" onclick="loadPreset(${i})">${p.label}</button>
+      `).join('');
+    }
+
+    function loadPreset(i) {
+      scenario = JSON.parse(JSON.stringify(PRESETS[i].scenario));
+      render();
+      resetPreview();
     }
 
     function renderMeta() {
       document.getElementById('metaTitle').value = scenario.title;
       document.getElementById('metaGroup').value = scenario.groupName;
-      document.getElementById('metaDuration').value = scenario.format.durationSec;
-      document.getElementById('metaFps').value = scenario.format.fps;
     }
 
     function updateMeta() {
       scenario.title = document.getElementById('metaTitle').value;
       scenario.groupName = document.getElementById('metaGroup').value;
-      scenario.format.durationSec = parseInt(document.getElementById('metaDuration').value) || 22;
-      scenario.format.fps = parseInt(document.getElementById('metaFps').value) || 30;
     }
 
     function renderMembers() {
@@ -588,20 +668,15 @@
         card.addEventListener('drop', onDrop);
         card.addEventListener('dragend', onDragEnd);
 
+        const typeBadge = `<span class="scene-type-badge ${scene.type}">${scene.type}</span>`;
         let bodyHtml = '';
 
-        // Type badge
-        const typeBadge = `<span class="scene-type-badge ${scene.type}">${scene.type}</span>`;
-
         if (scene.type === 'message') {
-          const memberKeys = Object.keys(scenario.members);
-          const speakerOpts = memberKeys.map(k =>
+          const speakerOpts = Object.keys(scenario.members).map(k =>
             `<option value="${k}" ${scene.speaker === k ? 'selected' : ''}>${scenario.members[k]?.name || k}</option>`
           ).join('');
-
           bodyHtml = `
-            <div class="scene-type-row">
-              ${typeBadge}
+            <div class="scene-type-row">${typeBadge}
               <span class="scene-speaker">${scenario.members[scene.speaker]?.name || scene.speaker}</span>
               <span class="scene-duration">${scene.durationMs}ms</span>
             </div>
@@ -633,12 +708,13 @@
               <span style="font-size:12px;color:#aaa">ms</span>
             </div>`;
         } else if (scene.type === 'ending') {
-          const lines = scene.lines || ['', '', ''];
+          const lines = scene.lines || ['', '', '', ''];
           bodyHtml = `
             <div class="scene-type-row">${typeBadge}<span class="scene-duration">${scene.durationMs}ms</span></div>
             <input class="scene-text-input" value="${lines[0]}" placeholder="タグライン" oninput="updateEndingLine(${i},0,this.value)">
             <input class="scene-text-input" value="${lines[1]}" placeholder="ブランド名" oninput="updateEndingLine(${i},1,this.value)">
             <input class="scene-text-input" value="${lines[2]}" placeholder="CTA" oninput="updateEndingLine(${i},2,this.value)">
+            <input class="scene-text-input" value="${lines[3] || ''}" placeholder="リンクURL" oninput="updateEndingLine(${i},3,this.value)">
             <div class="scene-fields">
               <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
               <span style="font-size:12px;color:#aaa">ms</span>
@@ -653,11 +729,9 @@
             <button class="move-btn" onclick="moveScene(${i},1)" title="下へ">↓</button>
             <button onclick="duplicateScene(${i})" title="複製" class="move-btn">⧉</button>
             <button onclick="removeScene(${i})" title="削除">×</button>
-          </div>
-        `;
+          </div>`;
         el.appendChild(card);
       });
-
       document.getElementById('sceneCount').textContent = scenario.scenes.length;
     }
 
@@ -676,38 +750,29 @@
       if (field === 'durationMs') updateDurationDisplay();
     }
     function updateEndingLine(i, lineIdx, val) {
-      if (!scenario.scenes[i].lines) scenario.scenes[i].lines = ['', '', ''];
+      if (!scenario.scenes[i].lines) scenario.scenes[i].lines = ['', '', '', ''];
       scenario.scenes[i].lines[lineIdx] = val;
     }
 
     function addScene(type) {
-      const firstMember = Object.keys(scenario.members)[0] || 'takashi';
+      const firstMember = Object.keys(scenario.members)[0];
       const templates = {
         hook: { type: 'hook', text: 'ここにフックテキスト', durationMs: 3000 },
         message: { type: 'message', speaker: firstMember, text: 'メッセージ内容', time: '18:00', durationMs: 2000 },
         caption: { type: 'caption', text: 'テロップ内容', durationMs: 1500 },
-        ending: { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA'], durationMs: 4000 },
+        ending: { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA', 'umeko.life'], durationMs: 4000 },
       };
       scenario.scenes.push(JSON.parse(JSON.stringify(templates[type])));
       renderScenes();
       updateDurationDisplay();
-      // Scroll to bottom
       document.getElementById('sceneList').lastChild?.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function removeScene(i) {
-      scenario.scenes.splice(i, 1);
-      renderScenes();
-      updateDurationDisplay();
-    }
-
+    function removeScene(i) { scenario.scenes.splice(i, 1); renderScenes(); updateDurationDisplay(); }
     function duplicateScene(i) {
-      const copy = JSON.parse(JSON.stringify(scenario.scenes[i]));
-      scenario.scenes.splice(i + 1, 0, copy);
-      renderScenes();
-      updateDurationDisplay();
+      scenario.scenes.splice(i + 1, 0, JSON.parse(JSON.stringify(scenario.scenes[i])));
+      renderScenes(); updateDurationDisplay();
     }
-
     function moveScene(i, dir) {
       const j = i + dir;
       if (j < 0 || j >= scenario.scenes.length) return;
@@ -717,14 +782,8 @@
 
     // ==================== Drag & drop ====================
     let dragIndex = null;
-    function onDragStart(e) {
-      dragIndex = parseInt(e.currentTarget.dataset.index);
-      e.currentTarget.classList.add('dragging');
-    }
-    function onDragOver(e) {
-      e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
-    }
+    function onDragStart(e) { dragIndex = parseInt(e.currentTarget.dataset.index); e.currentTarget.classList.add('dragging'); }
+    function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
     function onDrop(e) {
       e.preventDefault();
       const dropIndex = parseInt(e.currentTarget.dataset.index);
@@ -754,6 +813,7 @@
         document.getElementById('memSide').value = m.side;
         document.getElementById('memEmoji').value = m.avatarEmoji;
         document.getElementById('memColor').value = m.avatarColor;
+        document.getElementById('memImage').value = m.avatarImage || '';
         document.getElementById('memDeleteBtn').style.display = 'block';
       } else {
         document.getElementById('memberModalTitle').textContent = 'メンバー追加';
@@ -763,29 +823,26 @@
         document.getElementById('memSide').value = 'left';
         document.getElementById('memEmoji').value = '';
         document.getElementById('memColor').value = '#4A90D9';
+        document.getElementById('memImage').value = '';
         document.getElementById('memDeleteBtn').style.display = 'none';
       }
       modal.classList.add('open');
     }
-
-    function closeMemberModal() {
-      document.getElementById('memberModal').classList.remove('open');
-      editingMemberId = null;
-    }
-
+    function closeMemberModal() { document.getElementById('memberModal').classList.remove('open'); editingMemberId = null; }
     function saveMember() {
       const id = editingMemberId || document.getElementById('memId').value.trim();
       if (!id) return alert('IDを入力してください');
+      const imgVal = document.getElementById('memImage').value.trim();
       scenario.members[id] = {
         name: document.getElementById('memName').value || id,
         side: document.getElementById('memSide').value,
         avatarEmoji: document.getElementById('memEmoji').value || '👤',
         avatarColor: document.getElementById('memColor').value,
+        ...(imgVal ? { avatarImage: imgVal } : {}),
       };
       closeMemberModal();
       render();
     }
-
     function deleteMember() {
       if (editingMemberId && confirm(`${editingMemberId} を削除しますか？`)) {
         delete scenario.members[editingMemberId];
@@ -795,12 +852,11 @@
     }
 
     // ==================== Preview ====================
-    function getFrame() {
-      return document.getElementById('previewFrame');
-    }
-
     function sendToPreview(action, data) {
-      getFrame().contentWindow.postMessage({ action, data }, '*');
+      document.getElementById('previewFrame').contentWindow.postMessage({ action, data }, '*');
+    }
+    function sendToRecord(action, data) {
+      document.getElementById('recordFrame').contentWindow.postMessage({ action, data }, '*');
     }
 
     function resetPreview() {
@@ -816,26 +872,20 @@
       isPlaying = true;
       document.getElementById('playBtn').textContent = '再生中…';
       document.getElementById('playBtn').disabled = true;
-
       sendToPreview('reset');
       sendToPreview('init', scenario);
-
       await sleep(300);
-
       for (let i = 0; i < scenario.scenes.length; i++) {
         if (!isPlaying) break;
         const scene = scenario.scenes[i];
         document.getElementById('previewProgress').textContent = `${i + 1} / ${scenario.scenes.length}`;
-
         sendToPreview('showScene', scene);
         await sleep(scene.durationMs);
-
         if (scene.type === 'hook' || scene.type === 'caption') {
           sendToPreview('clearOverlays');
           await sleep(400);
         }
       }
-
       document.getElementById('playBtn').textContent = '再生';
       document.getElementById('playBtn').disabled = false;
       isPlaying = false;
@@ -844,11 +894,102 @@
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-    // ==================== Save / Load ====================
-    function getSavedList() {
-      return JSON.parse(localStorage.getItem('umeko_scenarios') || '{}');
+    // ==================== Recording ====================
+    async function recordAndDownload() {
+      if (isRecording) return;
+      isRecording = true;
+      const btn = document.getElementById('recordBtn');
+      btn.disabled = true;
+      btn.textContent = '録画準備中…';
+      document.getElementById('recordOverlay').classList.add('active');
+
+      const recFrame = document.getElementById('recordFrame');
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const ctx = canvas.getContext('2d');
+
+      // Init recording iframe
+      sendToRecord('reset');
+      sendToRecord('init', scenario);
+      await sleep(500);
+
+      // Setup MediaRecorder
+      const stream = canvas.captureStream(30);
+      const chunks = [];
+      const recorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 8000000,
+      });
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+      // Start recording
+      recorder.start();
+
+      // Capture loop
+      const captureFrame = async () => {
+        try {
+          const frameDoc = recFrame.contentDocument || recFrame.contentWindow.document;
+          const result = await html2canvas(frameDoc.body, {
+            width: 1080, height: 1920, scale: 1,
+            useCORS: true, allowTaint: true,
+            backgroundColor: null,
+          });
+          ctx.clearRect(0, 0, 1080, 1920);
+          ctx.drawImage(result, 0, 0);
+        } catch (e) {
+          // fallback: fill with bg color
+          ctx.fillStyle = '#7494A5';
+          ctx.fillRect(0, 0, 1080, 1920);
+        }
+      };
+
+      // Play through scenes
+      for (let i = 0; i < scenario.scenes.length; i++) {
+        const scene = scenario.scenes[i];
+        document.getElementById('recProgress').textContent =
+          `シーン ${i + 1} / ${scenario.scenes.length}`;
+
+        sendToRecord('showScene', scene);
+        await sleep(500); // wait for animation
+
+        // Capture frames for duration
+        const frames = Math.ceil(scene.durationMs / 100);
+        for (let f = 0; f < frames; f++) {
+          await captureFrame();
+          await sleep(100);
+        }
+
+        if (scene.type === 'hook' || scene.type === 'caption') {
+          sendToRecord('clearOverlays');
+          await sleep(500);
+          for (let f = 0; f < 5; f++) {
+            await captureFrame();
+            await sleep(100);
+          }
+        }
+      }
+
+      // Stop and download
+      recorder.stop();
+      await new Promise(r => { recorder.onstop = r; });
+
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (scenario.title || 'umeko-video') + '.webm';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      document.getElementById('recordOverlay').classList.remove('active');
+      btn.disabled = false;
+      btn.textContent = '録画してダウンロード';
+      isRecording = false;
     }
 
+    // ==================== Save / Load ====================
+    function getSavedList() { return JSON.parse(localStorage.getItem('umeko_scenarios') || '{}'); }
     function saveScenario() {
       updateMeta();
       const name = scenario.title || 'untitled';
@@ -858,16 +999,10 @@
       renderSaved();
       alert(`「${name}」を保存しました`);
     }
-
     function loadScenario(name) {
       const saved = getSavedList();
-      if (saved[name]) {
-        scenario = JSON.parse(JSON.stringify(saved[name]));
-        render();
-        resetPreview();
-      }
+      if (saved[name]) { scenario = JSON.parse(JSON.stringify(saved[name])); render(); resetPreview(); }
     }
-
     function deleteSaved(name, e) {
       e.stopPropagation();
       if (!confirm(`「${name}」を削除しますか？`)) return;
@@ -876,7 +1011,6 @@
       localStorage.setItem('umeko_scenarios', JSON.stringify(saved));
       renderSaved();
     }
-
     function renderSaved() {
       const el = document.getElementById('savedList');
       const saved = getSavedList();
@@ -895,18 +1029,6 @@
       `).join('');
     }
 
-    function newScenario() {
-      if (!confirm('現在の編集内容は失われます。新規シナリオを作成しますか？')) return;
-      scenario = JSON.parse(JSON.stringify(DEFAULT_SCENARIO));
-      scenario.title = '新規シナリオ';
-      scenario.scenes = [
-        { type: 'hook', text: 'ここにフックテキスト', durationMs: 3000 },
-        { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA'], durationMs: 4000 },
-      ];
-      render();
-      resetPreview();
-    }
-
     // ==================== Export / Import ====================
     function exportJSON() {
       updateMeta();
@@ -918,11 +1040,7 @@
       a.click();
       URL.revokeObjectURL(url);
     }
-
-    function importJSON() {
-      document.getElementById('importFile').click();
-    }
-
+    function importJSON() { document.getElementById('importFile').click(); }
     function handleImport(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -935,9 +1053,7 @@
           render();
           resetPreview();
           alert('インポートしました');
-        } catch (err) {
-          alert('JSONの読み込みに失敗しました: ' + err.message);
-        }
+        } catch (err) { alert('JSONの読み込みに失敗しました: ' + err.message); }
       };
       reader.readAsText(file);
       e.target.value = '';
@@ -945,23 +1061,11 @@
 
     // ==================== Init ====================
     window.addEventListener('load', () => {
-      // Load default scenario from file, or use built-in
-      fetch('./scenario.json')
-        .then(r => r.json())
-        .then(data => {
-          scenario = data;
-          render();
-          // Init preview iframe after it loads
-          getFrame().addEventListener('load', () => {
-            sendToPreview('init', scenario);
-          });
-        })
-        .catch(() => {
-          render();
-          getFrame().addEventListener('load', () => {
-            sendToPreview('init', scenario);
-          });
-        });
+      render();
+      const initFrame = () => sendToPreview('init', scenario);
+      const frame = document.getElementById('previewFrame');
+      if (frame.contentDocument?.readyState === 'complete') initFrame();
+      else frame.addEventListener('load', initFrame);
     });
   </script>
 </body>

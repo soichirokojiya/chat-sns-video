@@ -24,10 +24,11 @@
   <div class="ending-screen" id="endingScreen">
     <div class="ending-tagline" id="endingTagline"></div>
     <div class="ending-brand">
-      <span class="brand-icon">🌸</span>
+      <img class="brand-icon" src="umeko-icon.png" alt="うめこ">
       <span id="endingBrand">うめこ</span>
     </div>
     <div class="ending-cta" id="endingCta"></div>
+    <div class="ending-link" id="endingLink"></div>
   </div>
 
   <script>
@@ -59,8 +60,11 @@
       const row = document.createElement('div');
       row.className = `message-row ${member.side}`;
       if (scene.speaker === 'umeko') row.classList.add('umeko');
+      const avatarHtml = member.avatarImage
+        ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
+        : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
       row.innerHTML = `
-        <div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>
+        ${avatarHtml}
         <div class="bubble-wrapper">
           <div class="speaker-name">${member.name}</div>
           <div class="bubble">${scene.text}</div>
@@ -84,6 +88,7 @@
       document.getElementById('endingTagline').textContent = lines[0] || '';
       document.getElementById('endingBrand').textContent = lines[1] || 'うめこ';
       document.getElementById('endingCta').textContent = lines[2] || '';
+      document.getElementById('endingLink').textContent = lines[3] || '';
       endingScreen.classList.add('visible');
     }
 

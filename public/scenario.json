@@ -24,7 +24,8 @@
       "name": "うめこ",
       "side": "left",
       "avatarColor": "#F5C842",
-      "avatarEmoji": "🌸"
+      "avatarEmoji": "🌸",
+      "avatarImage": "umeko-icon.png"
     }
   },
   "scenes": [
@@ -98,7 +99,8 @@
       "lines": [
         "言いづらいことを、やわらかく。",
         "うめこ",
-        "LINEグループに追加するだけ"
+        "LINEグループに追加するだけ",
+        "umeko.life"
       ],
       "durationMs": 4000
     }
