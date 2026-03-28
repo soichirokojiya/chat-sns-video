@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>うめこ - Chat Video</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Status bar -->
+  <div class="status-bar">18:42</div>
+
+  <!-- Chat header -->
+  <div class="chat-header">
+    <span class="back-arrow">&lt;</span>
+    <span class="group-name" id="groupName">家族グループ</span>
+    <span class="member-count" id="memberCount">(3)</span>
+  </div>
+
+  <!-- Chat area -->
+  <div class="chat-area" id="chatArea"></div>
+
+  <!-- Overlay for hook -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-bg"></div>
+    <div class="overlay-text" id="overlayText"></div>
+  </div>
+
+  <!-- Caption bar -->
+  <div class="caption-bar" id="captionBar">
+    <div class="caption-text" id="captionText"></div>
+  </div>
+
+  <!-- Ending screen -->
+  <div class="ending-screen" id="endingScreen">
+    <div class="ending-tagline" id="endingTagline"></div>
+    <div class="ending-brand">
+      <span class="brand-icon">🌸</span>
+      <span id="endingBrand">うめこ</span>
+    </div>
+    <div class="ending-cta" id="endingCta"></div>
+  </div>
+
+  <script>
+    // This script is controlled by Playwright via window.showScene()
+    // For standalone preview, it loads scenario.json and auto-plays
+
+    const chatArea = document.getElementById('chatArea');
+    const overlay = document.getElementById('overlay');
+    const overlayText = document.getElementById('overlayText');
+    const captionBar = document.getElementById('captionBar');
+    const captionText = document.getElementById('captionText');
+    const endingScreen = document.getElementById('endingScreen');
+
+    let scenario = null;
+    let members = {};
+
+    function hideAll() {
+      overlay.classList.remove('visible');
+      captionBar.classList.remove('visible');
+      endingScreen.classList.remove('visible');
+    }
+
+    function showHook(text) {
+      hideAll();
+      overlayText.textContent = text;
+      overlay.classList.add('visible');
+    }
+
+    function showMessage(scene) {
+      hideAll();
+      const member = members[scene.speaker];
+      const row = document.createElement('div');
+      row.className = `message-row ${member.side}`;
+      if (scene.speaker === 'umeko') row.classList.add('umeko');
+
+      row.innerHTML = `
+        <div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>
+        <div class="bubble-wrapper">
+          <div class="speaker-name">${member.name}</div>
+          <div class="bubble">${scene.text}</div>
+          <div class="bubble-meta"><span class="time">${scene.time || ''}</span></div>
+        </div>
+      `;
+
+      chatArea.appendChild(row);
+
+      // Auto-scroll to bottom
+      chatArea.scrollTop = chatArea.scrollHeight;
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          row.classList.add('visible');
+        });
+      });
+    }
+
+    function showCaption(text, style) {
+      hideAll();
+      captionText.textContent = text;
+      captionText.className = 'caption-text' + (style === 'highlight' ? ' highlight' : '');
+      captionBar.classList.add('visible');
+    }
+
+    function showEnding(lines) {
+      hideAll();
+      document.getElementById('endingTagline').textContent = lines[0] || '';
+      document.getElementById('endingBrand').textContent = lines[1] || 'うめこ';
+      document.getElementById('endingCta').textContent = lines[2] || '';
+      endingScreen.classList.add('visible');
+    }
+
+    // Exposed for Playwright
+    window.showScene = function(scene) {
+      switch (scene.type) {
+        case 'hook':
+          showHook(scene.text);
+          break;
+        case 'message':
+          showMessage(scene);
+          break;
+        case 'caption':
+          showCaption(scene.text, scene.style);
+          break;
+        case 'ending':
+          showEnding(scene.lines);
+          break;
+      }
+    };
+
+    window.initScenario = function(data) {
+      scenario = data;
+      members = data.members;
+      document.getElementById('groupName').textContent = data.groupName;
+      const memberCount = Object.keys(members).length;
+      document.getElementById('memberCount').textContent = `(${memberCount})`;
+    };
+
+    window.clearOverlays = function() {
+      hideAll();
+    };
+
+    // Auto-play for standalone preview
+    async function autoPlay() {
+      try {
+        const res = await fetch('./scenario.json');
+        const data = await res.json();
+        window.initScenario(data);
+
+        for (const scene of data.scenes) {
+          await new Promise(r => setTimeout(r, 300));
+          window.showScene(scene);
+          await new Promise(r => setTimeout(r, scene.durationMs));
+          if (scene.type === 'hook' || scene.type === 'caption') {
+            hideAll();
+          }
+        }
+      } catch (e) {
+        // Controlled by Playwright - no auto-play
+      }
+    }
+
+    // Only auto-play if not controlled by Playwright
+    if (!window.__PLAYWRIGHT_CONTROLLED__) {
+      autoPlay();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+{
+  "title": "夫婦LINE - うめこ介入篇",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "durationSec": 22
+  },
+  "groupName": "家族グループ",
+  "members": {
+    "takashi": {
+      "name": "たかし",
+      "side": "left",
+      "avatarColor": "#4A90D9",
+      "avatarEmoji": "👨"
+    },
+    "akane": {
+      "name": "あかね",
+      "side": "right",
+      "avatarColor": "#E87BA2",
+      "avatarEmoji": "👩"
+    },
+    "umeko": {
+      "name": "うめこ",
+      "side": "left",
+      "avatarColor": "#F5C842",
+      "avatarEmoji": "🌸"
+    }
+  },
+  "scenes": [
+    {
+      "type": "hook",
+      "text": "夫婦LINE、ちょっと\n険悪になる前に──",
+      "durationMs": 3000
+    },
+    {
+      "type": "message",
+      "speaker": "takashi",
+      "text": "今日も遅くなる、ごめん",
+      "time": "18:42",
+      "durationMs": 1800
+    },
+    {
+      "type": "message",
+      "speaker": "akane",
+      "text": "……またなんだ",
+      "time": "18:43",
+      "durationMs": 1800
+    },
+    {
+      "type": "message",
+      "speaker": "takashi",
+      "text": "仕方ないだろ、仕事なんだから",
+      "time": "18:43",
+      "durationMs": 2000
+    },
+    {
+      "type": "caption",
+      "text": "ちょっと空気が重くなってきた…",
+      "durationMs": 1500
+    },
+    {
+      "type": "message",
+      "speaker": "akane",
+      "text": "わかってるけど、毎回それ言われると\n何も言えなくなる",
+      "time": "18:44",
+      "durationMs": 2500
+    },
+    {
+      "type": "caption",
+      "text": "そこに、うめこが──",
+      "style": "highlight",
+      "durationMs": 1500
+    },
+    {
+      "type": "message",
+      "speaker": "umeko",
+      "text": "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？",
+      "time": "18:44",
+      "durationMs": 4000
+    },
+    {
+      "type": "message",
+      "speaker": "takashi",
+      "text": "…水曜なら早く帰れるかも",
+      "time": "18:45",
+      "durationMs": 1800
+    },
+    {
+      "type": "message",
+      "speaker": "akane",
+      "text": "じゃあ水曜ごはん一緒に食べよ ☺️",
+      "time": "18:45",
+      "durationMs": 2000
+    },
+    {
+      "type": "ending",
+      "lines": [
+        "言いづらいことを、やわらかく。",
+        "うめこ",
+        "LINEグループに追加するだけ"
+      ],
+      "durationMs": 4000
+    }
+  ]
+}

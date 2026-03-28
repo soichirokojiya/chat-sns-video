@@ -1,0 +1,8 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "framework": null,
+  "rewrites": [
+    { "source": "/scenario.json", "destination": "/scenario.json" }
+  ]
+}

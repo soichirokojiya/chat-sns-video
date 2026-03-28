@@ -1,0 +1,17 @@
+{
+  "name": "chat-sns-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "うめこプロモーション動画生成ツール",
+  "scripts": {
+    "capture": "npx tsx src/captureFrames.ts",
+    "video": "npx tsx src/makeVideo.ts",
+    "generate": "npx tsx src/captureFrames.ts && npx tsx src/makeVideo.ts",
+    "preview": "npx serve public -l 3099"
+  },
+  "dependencies": {
+    "playwright": "^1.42.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
