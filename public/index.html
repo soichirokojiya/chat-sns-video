@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>うめこ動画エディタ</title>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/util.min.js" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #f5f5f0;
@@ -970,17 +972,60 @@
         }
       }
 
-      // Stop and download
+      // Stop recording
       recorder.stop();
       await new Promise(r => { recorder.onstop = r; });
 
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = (scenario.title || 'umeko-video') + '.webm';
-      a.click();
-      URL.revokeObjectURL(url);
+      const webmBlob = new Blob(chunks, { type: 'video/webm' });
+
+      // Convert WebM → MP4 using ffmpeg.wasm
+      document.getElementById('recProgress').textContent = 'mp4に変換中…（初回は少し時間がかかります）';
+
+      try {
+        const { FFmpeg } = FFmpegWASM;
+        const { fetchFile } = FFmpegUtil;
+        const ffmpeg = new FFmpeg();
+
+        await ffmpeg.load({
+          coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+          wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+        });
+
+        const webmData = await fetchFile(webmBlob);
+        await ffmpeg.writeFile('input.webm', webmData);
+
+        await ffmpeg.exec([
+          '-i', 'input.webm',
+          '-c:v', 'libx264',
+          '-pix_fmt', 'yuv420p',
+          '-preset', 'fast',
+          '-crf', '23',
+          '-movflags', '+faststart',
+          'output.mp4'
+        ]);
+
+        const mp4Data = await ffmpeg.readFile('output.mp4');
+        const mp4Blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
+
+        const url = URL.createObjectURL(mp4Blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (scenario.title || 'umeko-video') + '.mp4';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        ffmpeg.terminate();
+      } catch (e) {
+        console.error('ffmpeg.wasm failed, falling back to webm:', e);
+        // Fallback: download as WebM
+        const url = URL.createObjectURL(webmBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (scenario.title || 'umeko-video') + '.webm';
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('mp4変換に失敗しました。WebMとしてダウンロードしました。\nローカルでffmpegを使って変換してください。');
+      }
 
       document.getElementById('recordOverlay').classList.remove('active');
       btn.disabled = false;
