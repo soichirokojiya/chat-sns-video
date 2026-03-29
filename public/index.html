@@ -1028,18 +1028,18 @@
         if (typeof FFmpegUtil === 'undefined') throw new Error('FFmpegUtil が読み込まれていません。ページを再読み込みしてください。');
 
         const { FFmpeg } = FFmpegWASM;
-        const { fetchFile, toBlobURL } = FFmpegUtil;
+        const { fetchFile } = FFmpegUtil;
         const ffmpeg = new FFmpeg();
 
-        // Convert all resources to same-origin blob URLs
-        const [coreURL, wasmURL, workerURL] = await Promise.all([
-          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript'),
-          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm'),
-          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js', 'text/javascript'),
-        ]);
+        document.getElementById('recProgress').textContent = 'ffmpegを初期化中…（初回は読み込みに時間がかかります）';
 
-        document.getElementById('recProgress').textContent = 'ffmpegを初期化中…';
-        await ffmpeg.load({ coreURL, wasmURL, classWorkerURL: workerURL });
+        // Self-hosted files (same-origin, no CORS issues)
+        const baseUrl = location.origin + '/vendor';
+        await ffmpeg.load({
+          coreURL: baseUrl + '/ffmpeg-core.js',
+          wasmURL: baseUrl + '/ffmpeg-core.wasm',
+          classWorkerURL: baseUrl + '/814.ffmpeg.js',
+        });
 
         // Write each frame PNG and build concat file
         document.getElementById('recProgress').textContent = 'フレームを書き込み中…';

@@ -3,3 +3,5 @@ output/frames/
 output/final.mp4
 dist/
 .vercel
+# ffmpeg wasm is too large for git, but deployed via vercel CLI
+public/vendor/ffmpeg-core.wasm
