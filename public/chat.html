@@ -205,8 +205,10 @@
       } catch(e) {}
     }
 
+    let typingSendTimeout = null;
     function clearTyping() {
       if (typingTimer) { clearInterval(typingTimer); typingTimer = null; }
+      if (typingSendTimeout) { clearTimeout(typingSendTimeout); typingSendTimeout = null; }
       typingText.textContent = '';
       typingCursor.style.display = 'none';
       sendBtn.classList.remove('active');
@@ -228,7 +230,8 @@
           clearInterval(typingTimer);
           typingTimer = null;
           playSendSound();
-          setTimeout(() => {
+          typingSendTimeout = setTimeout(() => {
+            typingSendTimeout = null;
             clearTyping();
             if (callback) callback();
           }, 200);
@@ -303,6 +306,9 @@
 
     // Switch between group and DM context
     function switchContext(scene) {
+      // Cancel any pending typing animation + callback
+      clearTyping();
+
       const target = scene.to; // 'group' or 'dm'
       const dmWith = scene.dmWith; // member key for DM partner
 
