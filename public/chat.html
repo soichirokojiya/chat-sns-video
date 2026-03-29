@@ -114,6 +114,49 @@
 
     window.clearOverlays = function() { hideAll(); };
 
+    // Wait for CSS transitions to finish on the last animated element
+    function waitForTransition(el) {
+      return new Promise(resolve => {
+        if (!el) return resolve();
+        const handler = () => { el.removeEventListener('transitionend', handler); resolve(); };
+        el.addEventListener('transitionend', handler);
+        // Safety timeout: if transitionend never fires (e.g. no transition), resolve after 800ms
+        setTimeout(resolve, 800);
+      });
+    }
+
+    // Show scene and notify parent when visually ready
+    async function showSceneAndNotify(scene) {
+      let transitionTarget = null;
+
+      if (scene.type === 'message') {
+        showMessage(scene);
+        // The last .message-row added
+        transitionTarget = chatArea.lastElementChild;
+      } else {
+        window.showScene(scene);
+        if (scene.type === 'hook') transitionTarget = overlay;
+        else if (scene.type === 'caption') transitionTarget = captionBar;
+        else if (scene.type === 'ending') transitionTarget = endingScreen;
+      }
+
+      await waitForTransition(transitionTarget);
+      if (window.parent !== window) {
+        window.parent.postMessage({ action: 'sceneReady' }, '*');
+      }
+    }
+
+    async function clearOverlaysAndNotify() {
+      const wasOverlay = overlay.classList.contains('visible');
+      const wasCaption = captionBar.classList.contains('visible');
+      const target = wasOverlay ? overlay : wasCaption ? captionBar : null;
+      hideAll();
+      if (target) await waitForTransition(target);
+      if (window.parent !== window) {
+        window.parent.postMessage({ action: 'clearReady' }, '*');
+      }
+    }
+
     // Listen for postMessage from parent editor
     window.addEventListener('message', (e) => {
       const msg = e.data;
@@ -121,6 +164,8 @@
       switch (msg.action) {
         case 'init': window.initScenario(msg.data); break;
         case 'showScene': window.showScene(msg.data); break;
+        case 'showSceneForRecord': showSceneAndNotify(msg.data); break;
+        case 'clearOverlaysForRecord': clearOverlaysAndNotify(); break;
         case 'reset': window.resetChat(); break;
         case 'clearOverlays': window.clearOverlays(); break;
       }

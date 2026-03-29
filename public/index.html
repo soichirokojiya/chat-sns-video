@@ -897,6 +897,35 @@
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     // ==================== Recording ====================
+    // Architecture: completely decouple capture time from video time.
+    // 1. For each scene state, send showSceneForRecord → wait for sceneReady postMessage
+    // 2. html2canvas captures one PNG of that state (takes however long it takes)
+    // 3. Store {png, durationMs} pairs
+    // 4. Feed all PNGs into ffmpeg.wasm with exact durations via concat demuxer
+    // Result: output mp4 timing is exactly what scenario.json says, regardless of capture speed.
+
+    function waitForChildMessage(actionName) {
+      return new Promise(resolve => {
+        const handler = (e) => {
+          if (e.data?.action === actionName) {
+            window.removeEventListener('message', handler);
+            resolve();
+          }
+        };
+        window.addEventListener('message', handler);
+      });
+    }
+
+    async function captureFrameAsPng(iframeEl) {
+      const frameDoc = iframeEl.contentDocument || iframeEl.contentWindow.document;
+      const canvas = await html2canvas(frameDoc.body, {
+        width: 1080, height: 1920, scale: 1,
+        useCORS: true, allowTaint: true,
+        backgroundColor: null,
+      });
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    }
+
     async function recordAndDownload() {
       if (isRecording) return;
       isRecording = true;
@@ -904,82 +933,48 @@
       btn.disabled = true;
       btn.textContent = '録画準備中…';
       document.getElementById('recordOverlay').classList.add('active');
+      document.getElementById('recProgress').textContent = 'シーンをキャプチャ中…';
 
       const recFrame = document.getElementById('recordFrame');
-      const canvas = document.createElement('canvas');
-      canvas.width = 1080;
-      canvas.height = 1920;
-      const ctx = canvas.getContext('2d');
 
-      // Init recording iframe
+      // Reset and init the recording iframe, wait for load
       sendToRecord('reset');
       sendToRecord('init', scenario);
-      await sleep(800);
+      // Wait for iframe to settle (init is synchronous, just need a rAF)
+      await new Promise(r => recFrame.contentWindow.requestAnimationFrame(() =>
+        recFrame.contentWindow.requestAnimationFrame(r)
+      ));
 
-      // We use a manual frame approach: capture key frames and hold them
-      // for the correct duration using requestVideoFrameCallback-like timing
-      const FPS = 10; // 10fps is enough for chat animation, keeps recording fast
-      const msPerFrame = 1000 / FPS;
+      // Phase 1: Capture each scene state as PNG with its intended duration
+      const frames = []; // Array of { blob: Blob, durationSec: number }
 
-      // Use captureStream with explicit fps
-      const stream = canvas.captureStream(FPS);
-      const chunks = [];
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 8000000,
-      });
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-      recorder.start();
-
-      // Helper: capture one frame from iframe
-      const captureFrame = async () => {
-        try {
-          const frameDoc = recFrame.contentDocument || recFrame.contentWindow.document;
-          const result = await html2canvas(frameDoc.body, {
-            width: 1080, height: 1920, scale: 1,
-            useCORS: true, allowTaint: true,
-            backgroundColor: null,
-          });
-          ctx.clearRect(0, 0, 1080, 1920);
-          ctx.drawImage(result, 0, 0);
-        } catch (e) {
-          ctx.fillStyle = '#7494A5';
-          ctx.fillRect(0, 0, 1080, 1920);
-        }
-      };
-
-      // Helper: hold current canvas frame for N ms in the recording
-      // We do this by sleeping the exact duration - the captureStream
-      // will keep sending the current canvas content at FPS rate
-      const holdFrame = (ms) => sleep(ms);
-
-      // Play through scenes with correct timing
       for (let i = 0; i < scenario.scenes.length; i++) {
         const scene = scenario.scenes[i];
         document.getElementById('recProgress').textContent =
-          `シーン ${i + 1} / ${scenario.scenes.length}`;
+          `キャプチャ中… ${i + 1} / ${scenario.scenes.length}`;
 
-        sendToRecord('showScene', scene);
-        await sleep(600); // wait for CSS transition
-        await captureFrame(); // capture the visual state ONCE
-        await holdFrame(scene.durationMs); // hold for exact duration
+        // Tell iframe to show scene and wait for transitionend notification
+        const readyPromise = waitForChildMessage('sceneReady');
+        recFrame.contentWindow.postMessage({ action: 'showSceneForRecord', data: scene }, '*');
+        await readyPromise;
 
+        // Capture the fully rendered state
+        const blob = await captureFrameAsPng(recFrame);
+        frames.push({ blob, durationSec: scene.durationMs / 1000 });
+
+        // For hook/caption: also capture the "cleared" state with a short gap
         if (scene.type === 'hook' || scene.type === 'caption') {
-          sendToRecord('clearOverlays');
-          await sleep(500);
-          await captureFrame();
-          await holdFrame(400); // brief transition gap
+          const clearPromise = waitForChildMessage('clearReady');
+          recFrame.contentWindow.postMessage({ action: 'clearOverlaysForRecord' }, '*');
+          await clearPromise;
+
+          const clearBlob = await captureFrameAsPng(recFrame);
+          frames.push({ blob: clearBlob, durationSec: 0.4 });
         }
       }
 
-      // Stop recording
-      recorder.stop();
-      await new Promise(r => { recorder.onstop = r; });
-
-      const webmBlob = new Blob(chunks, { type: 'video/webm' });
-
-      // Convert WebM → MP4 using ffmpeg.wasm
-      document.getElementById('recProgress').textContent = 'mp4に変換中…（初回は少し時間がかかります）';
+      // Phase 2: Load ffmpeg.wasm and build mp4
+      document.getElementById('recProgress').textContent = 'mp4を生成中…（初回は読み込みに少し時間がかかります）';
 
       try {
         const { FFmpeg } = FFmpegWASM;
@@ -991,16 +986,35 @@
           wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
         });
 
-        const webmData = await fetchFile(webmBlob);
-        await ffmpeg.writeFile('input.webm', webmData);
+        // Write each frame PNG and build concat file
+        let concatContent = '';
+        for (let i = 0; i < frames.length; i++) {
+          const filename = `frame${String(i).padStart(4, '0')}.png`;
+          const data = await fetchFile(frames[i].blob);
+          await ffmpeg.writeFile(filename, data);
+          concatContent += `file '${filename}'\n`;
+          concatContent += `duration ${frames[i].durationSec.toFixed(3)}\n`;
+        }
+        // Concat demuxer requires the last file to be listed again (without duration)
+        if (frames.length > 0) {
+          concatContent += `file 'frame${String(frames.length - 1).padStart(4, '0')}.png'\n`;
+        }
+
+        await ffmpeg.writeFile('concat.txt', new TextEncoder().encode(concatContent));
+
+        document.getElementById('recProgress').textContent = 'エンコード中…';
 
         await ffmpeg.exec([
-          '-i', 'input.webm',
+          '-f', 'concat',
+          '-safe', '0',
+          '-i', 'concat.txt',
           '-c:v', 'libx264',
           '-pix_fmt', 'yuv420p',
           '-preset', 'fast',
-          '-crf', '23',
+          '-crf', '20',
+          '-r', '30',
           '-movflags', '+faststart',
+          '-vf', 'scale=1080:1920',
           'output.mp4'
         ]);
 
@@ -1016,15 +1030,8 @@
 
         ffmpeg.terminate();
       } catch (e) {
-        console.error('ffmpeg.wasm failed, falling back to webm:', e);
-        // Fallback: download as WebM
-        const url = URL.createObjectURL(webmBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = (scenario.title || 'umeko-video') + '.webm';
-        a.click();
-        URL.revokeObjectURL(url);
-        alert('mp4変換に失敗しました。WebMとしてダウンロードしました。\nローカルでffmpegを使って変換してください。');
+        console.error('ffmpeg.wasm failed:', e);
+        alert('mp4の生成に失敗しました: ' + e.message);
       }
 
       document.getElementById('recordOverlay').classList.remove('active');
