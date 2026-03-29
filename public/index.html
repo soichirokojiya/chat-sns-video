@@ -914,21 +914,24 @@
       // Init recording iframe
       sendToRecord('reset');
       sendToRecord('init', scenario);
-      await sleep(500);
+      await sleep(800);
 
-      // Setup MediaRecorder
-      const stream = canvas.captureStream(30);
+      // We use a manual frame approach: capture key frames and hold them
+      // for the correct duration using requestVideoFrameCallback-like timing
+      const FPS = 10; // 10fps is enough for chat animation, keeps recording fast
+      const msPerFrame = 1000 / FPS;
+
+      // Use captureStream with explicit fps
+      const stream = canvas.captureStream(FPS);
       const chunks = [];
       const recorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp9',
         videoBitsPerSecond: 8000000,
       });
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-
-      // Start recording
       recorder.start();
 
-      // Capture loop
+      // Helper: capture one frame from iframe
       const captureFrame = async () => {
         try {
           const frameDoc = recFrame.contentDocument || recFrame.contentWindow.document;
@@ -940,35 +943,32 @@
           ctx.clearRect(0, 0, 1080, 1920);
           ctx.drawImage(result, 0, 0);
         } catch (e) {
-          // fallback: fill with bg color
           ctx.fillStyle = '#7494A5';
           ctx.fillRect(0, 0, 1080, 1920);
         }
       };
 
-      // Play through scenes
+      // Helper: hold current canvas frame for N ms in the recording
+      // We do this by sleeping the exact duration - the captureStream
+      // will keep sending the current canvas content at FPS rate
+      const holdFrame = (ms) => sleep(ms);
+
+      // Play through scenes with correct timing
       for (let i = 0; i < scenario.scenes.length; i++) {
         const scene = scenario.scenes[i];
         document.getElementById('recProgress').textContent =
           `シーン ${i + 1} / ${scenario.scenes.length}`;
 
         sendToRecord('showScene', scene);
-        await sleep(500); // wait for animation
-
-        // Capture frames for duration
-        const frames = Math.ceil(scene.durationMs / 100);
-        for (let f = 0; f < frames; f++) {
-          await captureFrame();
-          await sleep(100);
-        }
+        await sleep(600); // wait for CSS transition
+        await captureFrame(); // capture the visual state ONCE
+        await holdFrame(scene.durationMs); // hold for exact duration
 
         if (scene.type === 'hook' || scene.type === 'caption') {
           sendToRecord('clearOverlays');
           await sleep(500);
-          for (let f = 0; f < 5; f++) {
-            await captureFrame();
-            await sleep(100);
-          }
+          await captureFrame();
+          await holdFrame(400); // brief transition gap
         }
       }
 
