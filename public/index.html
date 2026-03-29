@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>うめこ動画エディタ</title>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #f5f5f0;
@@ -961,14 +960,13 @@
       });
     }
 
-    async function captureFrameAsPng(iframeEl) {
+    async function captureFrameAsCanvas(iframeEl) {
       const frameDoc = iframeEl.contentDocument || iframeEl.contentWindow.document;
-      const canvas = await html2canvas(frameDoc.body, {
+      return html2canvas(frameDoc.body, {
         width: 1080, height: 1920, scale: 1,
         useCORS: true, allowTaint: true,
-        backgroundColor: null,
+        backgroundColor: '#8CAAB7',
       });
-      return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     }
 
     async function recordAndDownload() {
@@ -980,105 +978,107 @@
       document.getElementById('recordOverlay').classList.add('active');
 
       try {
-        document.getElementById('recProgress').textContent = 'シーンをキャプチャ中…';
+        // Check WebCodecs support
+        if (typeof VideoEncoder === 'undefined') {
+          throw new Error('このブラウザはWebCodecs APIに対応していません。Chrome/Edgeの最新版をお使いください。');
+        }
+        if (typeof Mp4Muxer === 'undefined') {
+          throw new Error('mp4-muxerの読み込みに失敗しました。ページを再読み込みしてください。');
+        }
 
+        const W = 1080, H = 1920, FPS = 30;
         const recFrame = document.getElementById('recordFrame');
 
-        // Reset and init the recording iframe
+        // Reset and init
         sendToRecord('reset');
         sendToRecord('init', scenario);
-        // Wait for iframe to settle
         await sleep(500);
 
-        // Phase 1: Capture each scene state as PNG with its intended duration
-        const frames = []; // Array of { blob: Blob, durationSec: number }
+        // Phase 1: Capture each scene as canvas + duration
+        const capturedScenes = []; // { canvas, durationMs }
 
         for (let i = 0; i < scenario.scenes.length; i++) {
           const scene = scenario.scenes[i];
           document.getElementById('recProgress').textContent =
             `キャプチャ中… ${i + 1} / ${scenario.scenes.length}`;
 
-          // Tell iframe to show scene and wait for transitionend notification
           const readyPromise = waitForChildMessage('sceneReady');
           recFrame.contentWindow.postMessage({ action: 'showSceneForRecord', data: scene }, '*');
           await readyPromise;
 
-          // Capture the fully rendered state
-          const blob = await captureFrameAsPng(recFrame);
-          if (!blob) throw new Error(`フレーム ${i + 1} のキャプチャに失敗しました`);
-          frames.push({ blob, durationSec: scene.durationMs / 1000 });
+          const canvas = await captureFrameAsCanvas(recFrame);
+          capturedScenes.push({ canvas, durationMs: scene.durationMs });
 
-          // For hook/caption: also capture the "cleared" state with a short gap
           if (scene.type === 'hook' || scene.type === 'caption') {
             const clearPromise = waitForChildMessage('clearReady');
             recFrame.contentWindow.postMessage({ action: 'clearOverlaysForRecord' }, '*');
             await clearPromise;
 
-            const clearBlob = await captureFrameAsPng(recFrame);
-            if (clearBlob) frames.push({ blob: clearBlob, durationSec: 0.4 });
+            const clearCanvas = await captureFrameAsCanvas(recFrame);
+            capturedScenes.push({ canvas: clearCanvas, durationMs: 400 });
           }
         }
 
-        if (frames.length === 0) throw new Error('キャプチャされたフレームがありません');
+        if (capturedScenes.length === 0) throw new Error('キャプチャされたフレームがありません');
 
-        // Phase 2: Load ffmpeg.wasm and build mp4
-        document.getElementById('recProgress').textContent = 'ffmpegを読み込み中…（初回は30秒ほどかかります）';
+        // Phase 2: Encode MP4 using WebCodecs + mp4-muxer
+        document.getElementById('recProgress').textContent = 'MP4をエンコード中…';
 
-        if (typeof FFmpegWASM === 'undefined') throw new Error('FFmpegWASM が読み込まれていません。ページを再読み込みしてください。');
-        if (typeof FFmpegUtil === 'undefined') throw new Error('FFmpegUtil が読み込まれていません。ページを再読み込みしてください。');
+        const muxer = new Mp4Muxer.Muxer({
+          target: new Mp4Muxer.ArrayBufferTarget(),
+          video: {
+            codec: 'avc',
+            width: W,
+            height: H,
+          },
+          fastStart: 'in-memory',
+        });
 
-        const { FFmpeg } = FFmpegWASM;
-        const { fetchFile, toBlobURL } = FFmpegUtil;
-        const ffmpeg = new FFmpeg();
+        const encoder = new VideoEncoder({
+          output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+          error: (e) => console.error('VideoEncoder error:', e),
+        });
 
-        document.getElementById('recProgress').textContent = 'ffmpegを読み込み中…（初回は30秒ほどかかります）';
+        encoder.configure({
+          codec: 'avc1.640033',
+          width: W,
+          height: H,
+          bitrate: 5_000_000,
+          framerate: FPS,
+        });
 
-        // Load self-hosted files as blob URLs so the Worker can importScripts them
-        const baseUrl = location.origin + '/vendor';
-        const [coreURL, wasmURL, workerURL] = await Promise.all([
-          toBlobURL(baseUrl + '/ffmpeg-core.js', 'text/javascript'),
-          toBlobURL(baseUrl + '/ffmpeg-core.wasm', 'application/wasm'),
-          toBlobURL(baseUrl + '/814.ffmpeg.js', 'text/javascript'),
-        ]);
+        // For each captured scene, encode frames for its duration
+        let timestampUs = 0;
+        const frameDurationUs = 1_000_000 / FPS;
 
-        document.getElementById('recProgress').textContent = 'ffmpegを初期化中…';
-        await ffmpeg.load({ coreURL, wasmURL, classWorkerURL: workerURL });
+        for (let i = 0; i < capturedScenes.length; i++) {
+          const { canvas, durationMs } = capturedScenes[i];
+          const frameCount = Math.max(1, Math.round((durationMs / 1000) * FPS));
 
-        // Write each frame PNG and build concat file
-        document.getElementById('recProgress').textContent = 'フレームを書き込み中…';
-        let concatContent = '';
-        for (let i = 0; i < frames.length; i++) {
-          const filename = `frame${String(i).padStart(4, '0')}.png`;
-          const data = await fetchFile(frames[i].blob);
-          await ffmpeg.writeFile(filename, data);
-          concatContent += `file '${filename}'\n`;
-          concatContent += `duration ${frames[i].durationSec.toFixed(3)}\n`;
+          document.getElementById('recProgress').textContent =
+            `エンコード中… ${i + 1} / ${capturedScenes.length}`;
+
+          for (let f = 0; f < frameCount; f++) {
+            const frame = new VideoFrame(canvas, {
+              timestamp: timestampUs,
+              duration: frameDurationUs,
+            });
+            const isKeyframe = (f === 0); // first frame of each scene
+            encoder.encode(frame, { keyFrame: isKeyframe });
+            frame.close();
+            timestampUs += frameDurationUs;
+          }
+
+          // Yield to UI to keep progress responsive
+          if (i % 3 === 0) await sleep(0);
         }
-        // Concat demuxer requires the last file listed again
-        concatContent += `file 'frame${String(frames.length - 1).padStart(4, '0')}.png'\n`;
 
-        await ffmpeg.writeFile('concat.txt', new TextEncoder().encode(concatContent));
+        await encoder.flush();
+        encoder.close();
+        muxer.finalize();
 
-        document.getElementById('recProgress').textContent = 'エンコード中…';
-
-        const exitCode = await ffmpeg.exec([
-          '-f', 'concat',
-          '-safe', '0',
-          '-i', 'concat.txt',
-          '-c:v', 'libx264',
-          '-pix_fmt', 'yuv420p',
-          '-preset', 'fast',
-          '-crf', '20',
-          '-r', '30',
-          '-movflags', '+faststart',
-          '-vf', 'scale=1080:1920',
-          'output.mp4'
-        ]);
-
-        if (exitCode !== 0) throw new Error(`ffmpegがエラーコード ${exitCode} で終了しました`);
-
-        const mp4Data = await ffmpeg.readFile('output.mp4');
-        const mp4Blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
+        const mp4Buffer = muxer.target.buffer;
+        const mp4Blob = new Blob([mp4Buffer], { type: 'video/mp4' });
 
         const url = URL.createObjectURL(mp4Blob);
         const a = document.createElement('a');
@@ -1087,7 +1087,6 @@
         a.click();
         URL.revokeObjectURL(url);
 
-        ffmpeg.terminate();
         document.getElementById('recProgress').textContent = '完了！';
       } catch (e) {
         console.error('録画エラー:', e);
