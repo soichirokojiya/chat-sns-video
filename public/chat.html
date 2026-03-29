@@ -10,7 +10,7 @@
   <!-- Status bar (iOS-like) -->
   <div class="status-bar">
     <div class="status-bar-left">
-      <span>18:42</span>
+      <span id="statusTime">18:42</span>
     </div>
     <div class="status-bar-right">
       <span>📶</span>
@@ -18,20 +18,35 @@
     </div>
   </div>
 
-  <!-- Chat header -->
-  <div class="chat-header">
-    <span class="back-arrow">‹</span>
+  <!-- Group chat header -->
+  <div class="chat-header" id="chatHeader">
+    <span class="back-arrow">&lt;</span>
     <div class="header-center">
       <span class="group-name" id="groupName">家族グループ</span>
       <span class="member-count" id="memberCount">メンバー 3</span>
     </div>
     <div class="header-icons">
+      <span>🔍</span>
       <span>📞</span>
       <span>☰</span>
     </div>
   </div>
 
-  <!-- Date separator -->
+  <!-- DM header (hidden by default) -->
+  <div class="chat-header" id="dmHeader" style="display:none">
+    <span class="back-arrow">&lt;</span>
+    <div class="dm-header-avatar" id="dmAvatar"></div>
+    <div class="header-center">
+      <span class="group-name" id="dmName"></span>
+    </div>
+    <div class="header-icons">
+      <span>🔍</span>
+      <span>📞</span>
+      <span>☰</span>
+    </div>
+  </div>
+
+  <!-- Chat area -->
   <div class="chat-area" id="chatArea">
     <div class="date-separator" id="dateSep">今日</div>
   </div>
@@ -43,9 +58,12 @@
       <span class="typing-text" id="typingText"></span>
       <span class="typing-cursor" id="typingCursor" style="display:none"></span>
     </div>
-    <span class="input-icon">🎤</span>
+    <span class="input-icon">😊</span>
     <div class="send-btn" id="sendBtn">▶</div>
   </div>
+
+  <!-- Context switch transition -->
+  <div class="switch-overlay" id="switchOverlay"></div>
 
   <!-- Effect overlays -->
   <div class="effect-focus-overlay" id="focusOverlay"></div>
@@ -81,9 +99,14 @@
     const sendBtn = document.getElementById('sendBtn');
     const focusOverlay = document.getElementById('focusOverlay');
     const flashOverlay = document.getElementById('flashOverlay');
+    const switchOverlay = document.getElementById('switchOverlay');
+    const chatHeader = document.getElementById('chatHeader');
+    const dmHeader = document.getElementById('dmHeader');
 
     let members = {};
     let typingTimer = null;
+    let currentContext = 'group'; // 'group' or 'dm'
+    let savedGroupMessages = null; // store group chat HTML when switching to DM
 
     function hideAll() {
       overlay.classList.remove('visible');
@@ -92,17 +115,12 @@
     }
 
     function clearEffects() {
-      // Focus
       focusOverlay.classList.remove('active');
       document.querySelectorAll('.effect-focus-target').forEach(el => el.classList.remove('effect-focus-target'));
-      // Zoom
       chatArea.classList.remove('effect-zoom');
       document.body.classList.remove('effect-zoom');
-      // Shake
       document.body.classList.remove('effect-shake');
-      // Flash
       flashOverlay.classList.remove('active');
-      // Glow
       document.querySelectorAll('.effect-glow').forEach(el => el.classList.remove('effect-glow'));
     }
 
@@ -120,7 +138,6 @@
           break;
         case 'shake':
           document.body.classList.add('effect-shake');
-          // Remove after animation so it can be re-triggered
           setTimeout(() => document.body.classList.remove('effect-shake'), 600);
           break;
         case 'flash':
@@ -140,10 +157,8 @@
       sendBtn.classList.remove('active');
     }
 
-    // Simulate typing in the input bar before a "right" side message
     function simulateTyping(text, callback) {
       clearTyping();
-      // Only show first line, truncated
       const displayText = text.split('\n')[0].slice(0, 30);
       let idx = 0;
       typingCursor.style.display = 'inline-block';
@@ -156,7 +171,6 @@
         } else {
           clearInterval(typingTimer);
           typingTimer = null;
-          // Brief pause then "send"
           setTimeout(() => {
             clearTyping();
             if (callback) callback();
@@ -176,15 +190,20 @@
       const member = members[scene.speaker];
       if (!member) return;
 
+      // In DM context, umeko is always left, the other person is right
+      const side = (currentContext === 'dm')
+        ? (scene.speaker === 'umeko' ? 'left' : 'right')
+        : member.side;
+
       const doShow = () => {
         const row = document.createElement('div');
-        row.className = `message-row ${member.side}`;
+        row.className = `message-row ${side}`;
         if (scene.speaker === 'umeko') row.classList.add('umeko');
         const avatarHtml = member.avatarImage
           ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
           : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
 
-        const readHtml = member.side === 'right' ? '<span class="read-receipt">既読</span>' : '';
+        const readHtml = side === 'right' ? '<span class="read-receipt">既読</span>' : '';
 
         row.innerHTML = `
           ${avatarHtml}
@@ -198,12 +217,11 @@
         chatArea.scrollTop = chatArea.scrollHeight;
         requestAnimationFrame(() => requestAnimationFrame(() => {
           row.classList.add('visible');
-          // Apply effect after message is visible
           if (scene.effect) applyEffect(scene.effect, row);
         }));
       };
 
-      if (member.side === 'right' && !skipTyping) {
+      if (side === 'right' && !skipTyping) {
         simulateTyping(scene.text, doShow);
       } else {
         doShow();
@@ -226,8 +244,56 @@
       endingScreen.classList.add('visible');
     }
 
+    // Switch between group and DM context
+    function switchContext(scene) {
+      const target = scene.to; // 'group' or 'dm'
+      const dmWith = scene.dmWith; // member key for DM partner
+
+      if (target === 'dm' && currentContext === 'group') {
+        // Save group chat state
+        savedGroupMessages = chatArea.innerHTML;
+
+        // Switch header
+        chatHeader.style.display = 'none';
+        dmHeader.style.display = 'flex';
+        document.body.classList.add('dm-mode');
+
+        // Set DM header info - show umeko's avatar and name
+        const umeko = members['umeko'];
+        if (umeko) {
+          const avatarEl = document.getElementById('dmAvatar');
+          if (umeko.avatarImage) {
+            avatarEl.innerHTML = `<img src="${umeko.avatarImage}" alt="${umeko.name}">`;
+          } else {
+            avatarEl.style.background = umeko.avatarColor;
+            avatarEl.textContent = umeko.avatarEmoji;
+          }
+          document.getElementById('dmName').textContent = umeko.name;
+        }
+
+        // Clear chat for DM
+        chatArea.innerHTML = '<div class="date-separator">今日</div>';
+
+      } else if (target === 'dm' && currentContext === 'dm') {
+        // Switching between DMs (different person) — just clear messages
+        chatArea.innerHTML = '<div class="date-separator">今日</div>';
+
+      } else if (target === 'group') {
+        // Restore group chat
+        chatHeader.style.display = 'flex';
+        dmHeader.style.display = 'none';
+        document.body.classList.remove('dm-mode');
+
+        if (savedGroupMessages) {
+          chatArea.innerHTML = savedGroupMessages;
+          chatArea.scrollTop = chatArea.scrollHeight;
+        }
+      }
+
+      currentContext = target;
+    }
+
     window.showScene = function(scene, skipTyping) {
-      // Clear previous effects (unless this scene has its own)
       if (!scene.effect) clearEffects();
 
       switch (scene.type) {
@@ -237,7 +303,6 @@
           break;
         case 'message':
           showMessage(scene, skipTyping);
-          // effect is applied inside showMessage after row is visible
           break;
         case 'caption':
           showCaption(scene.text, scene.style);
@@ -247,6 +312,9 @@
           showEnding(scene.lines);
           clearEffects();
           break;
+        case 'switchContext':
+          switchContext(scene);
+          break;
       }
     };
 
@@ -255,7 +323,13 @@
       document.getElementById('groupName').textContent = data.groupName;
       document.getElementById('memberCount').textContent = `メンバー ${Object.keys(members).length}`;
 
-      // Show pre-existing messages (context before the main scenario)
+      // Reset to group mode
+      currentContext = 'group';
+      savedGroupMessages = null;
+      chatHeader.style.display = 'flex';
+      dmHeader.style.display = 'none';
+      document.body.classList.remove('dm-mode');
+
       if (data.preMessages && Array.isArray(data.preMessages)) {
         for (const msg of data.preMessages) {
           const member = members[msg.speaker];
@@ -284,11 +358,15 @@
       clearEffects();
       chatArea.innerHTML = '<div class="date-separator">今日</div>';
       hideAll();
+      currentContext = 'group';
+      savedGroupMessages = null;
+      chatHeader.style.display = 'flex';
+      dmHeader.style.display = 'none';
+      document.body.classList.remove('dm-mode');
     };
 
     window.clearOverlays = function() { hideAll(); };
 
-    // Wait for CSS transitions
     function waitForTransition(el) {
       return new Promise(resolve => {
         if (!el) return resolve();
@@ -298,7 +376,6 @@
       });
     }
 
-    // Set typing state instantly (for recording capture)
     function setTypingState(text) {
       clearTyping();
       const displayText = text.split('\n')[0].slice(0, 25);
@@ -313,6 +390,9 @@
       if (scene.type === 'message') {
         showMessage(scene, true);
         transitionTarget = chatArea.lastElementChild;
+      } else if (scene.type === 'switchContext') {
+        switchContext(scene);
+        // No transition target needed, just notify
       } else {
         window.showScene(scene, true);
         if (scene.type === 'hook') transitionTarget = overlay;
@@ -337,7 +417,6 @@
       }
     }
 
-    // Listen for postMessage from parent
     window.addEventListener('message', (e) => {
       const msg = e.data;
       if (!msg || !msg.action) return;
@@ -362,7 +441,7 @@
         for (const scene of data.scenes) {
           await new Promise(r => setTimeout(r, 300));
           window.showScene(scene);
-          await new Promise(r => setTimeout(r, scene.durationMs));
+          await new Promise(r => setTimeout(r, scene.durationMs || 800));
           if (scene.type === 'hook' || scene.type === 'caption') hideAll();
         }
       } catch (e) {}

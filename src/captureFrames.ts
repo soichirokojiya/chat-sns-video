@@ -8,12 +8,14 @@ const FRAMES_DIR = join(ROOT, "output", "frames");
 const HTML_PATH = join(ROOT, "public", "chat.html");
 
 interface Scene {
-  type: "hook" | "message" | "caption" | "ending";
+  type: "hook" | "message" | "caption" | "ending" | "switchContext";
   text?: string;
   speaker?: string;
   time?: string;
   style?: string;
   lines?: string[];
+  to?: string;
+  dmWith?: string;
   durationMs: number;
 }
 

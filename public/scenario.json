@@ -1,10 +1,10 @@
 {
-  "title": "夫婦LINE - うめこ介入篇",
+  "title": "夫婦LINE - うめこDMフォロー篇",
   "format": {
     "width": 1080,
     "height": 1920,
     "fps": 30,
-    "durationSec": 22
+    "durationSec": 35
   },
   "groupName": "家族グループ",
   "members": {
@@ -28,36 +28,36 @@
       "avatarImage": "umeko-icon.png"
     }
   },
+  "preMessages": [
+    { "speaker": "akane", "text": "今日の晩ごはん何にする？", "time": "17:30" },
+    { "speaker": "takashi", "text": "なんでもいいよ", "time": "17:35" },
+    { "speaker": "akane", "text": "それが一番困るんだけど😅", "time": "17:36" }
+  ],
   "scenes": [
     {
       "type": "hook",
-      "text": "夫婦LINE、ちょっと\n険悪になる前に──",
-      "durationMs": 3000
+      "text": "夫婦LINE、ちょっと\n険悪になったとき──",
+      "durationMs": 2500
     },
     {
       "type": "message",
       "speaker": "takashi",
       "text": "今日も遅くなる、ごめん",
       "time": "18:42",
-      "durationMs": 1800
+      "durationMs": 1500
     },
     {
       "type": "message",
       "speaker": "akane",
       "text": "……またなんだ",
       "time": "18:43",
-      "durationMs": 1800
+      "durationMs": 1500
     },
     {
       "type": "message",
       "speaker": "takashi",
       "text": "仕方ないだろ、仕事なんだから",
       "time": "18:43",
-      "durationMs": 2000
-    },
-    {
-      "type": "caption",
-      "text": "ちょっと空気が重くなってきた…",
       "durationMs": 1500
     },
     {
@@ -65,41 +65,99 @@
       "speaker": "akane",
       "text": "わかってるけど、毎回それ言われると\n何も言えなくなる",
       "time": "18:44",
-      "durationMs": 2500
+      "effect": "shake",
+      "durationMs": 2000
     },
     {
       "type": "caption",
-      "text": "そこに、うめこが──",
+      "text": "空気が重くなってきた…",
+      "durationMs": 1500
+    },
+    {
+      "type": "caption",
+      "text": "うめこが空気の変化を検知💡",
       "style": "highlight",
       "effect": "flash",
       "durationMs": 1500
     },
     {
-      "type": "message",
-      "speaker": "umeko",
-      "text": "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？",
-      "time": "18:44",
-      "effect": "focus",
-      "durationMs": 4000
+      "type": "caption",
+      "text": "グループではなく、それぞれにDMで──",
+      "style": "highlight",
+      "durationMs": 1500
+    },
+    {
+      "type": "switchContext",
+      "to": "dm",
+      "dmWith": "akane",
+      "durationMs": 800
     },
     {
       "type": "message",
-      "speaker": "takashi",
-      "text": "…水曜なら早く帰れるかも",
+      "speaker": "umeko",
+      "text": "あかねさん、さっきのやりとり\n気になったので 😌\nたかしさんも申し訳なく思ってると\n思いますよ。\n「今週どこかで早く帰れる日ある？」\nって聞いてみるのはどうですか？",
       "time": "18:45",
-      "durationMs": 1800
+      "effect": "glow",
+      "durationMs": 3500
     },
     {
       "type": "message",
       "speaker": "akane",
-      "text": "じゃあ水曜ごはん一緒に食べよ ☺️",
+      "text": "…たしかに、そう聞けばよかった",
+      "time": "18:46",
+      "durationMs": 1500
+    },
+    {
+      "type": "switchContext",
+      "to": "dm",
+      "dmWith": "takashi",
+      "durationMs": 800
+    },
+    {
+      "type": "message",
+      "speaker": "umeko",
+      "text": "たかしさん、お仕事おつかれさまです。\nあかねさんは寂しいんだと思います。\n「遅くなってごめん、◯曜は早く帰るね」\nって伝えると安心するかもです 😊",
       "time": "18:45",
+      "effect": "glow",
+      "durationMs": 3500
+    },
+    {
+      "type": "message",
+      "speaker": "takashi",
+      "text": "そっか…ちょっと言い方きつかったな",
+      "time": "18:46",
+      "durationMs": 1500
+    },
+    {
+      "type": "caption",
+      "text": "それぞれが自分の言葉でグループに戻る",
+      "style": "highlight",
+      "durationMs": 1500
+    },
+    {
+      "type": "switchContext",
+      "to": "group",
+      "durationMs": 800
+    },
+    {
+      "type": "message",
+      "speaker": "takashi",
+      "text": "さっきはごめん。\n水曜は早く帰るから、ごはん一緒に食べよう",
+      "time": "18:50",
+      "durationMs": 2500
+    },
+    {
+      "type": "message",
+      "speaker": "akane",
+      "text": "うん、楽しみにしてる ☺️",
+      "time": "18:51",
+      "effect": "glow",
       "durationMs": 2000
     },
     {
       "type": "ending",
       "lines": [
-        "言いづらいことを、やわらかく。",
+        "どちらが悪いかより、\nどうしたらうまくいくか。",
         "うめこ",
         "LINEグループに追加するだけ",
         "umeko.life"
