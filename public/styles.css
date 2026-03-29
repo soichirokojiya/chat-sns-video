@@ -383,11 +383,13 @@ body.dm-mode .speaker-name {
   opacity: 1;
 }
 .ending-tagline {
-  font-size: 52px;
+  font-size: 46px;
   font-weight: 700;
   color: #555;
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.6;
+  white-space: pre-line;
+  padding: 0 60px;
 }
 .ending-brand {
   font-size: 88px;
