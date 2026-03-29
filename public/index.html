@@ -6,7 +6,7 @@
   <title>うめこ動画エディタ</title>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/util.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #f5f5f0;
@@ -127,6 +127,14 @@
       background: transparent; font-size: 13px; cursor: pointer; color: var(--text-sub); transition: all 0.15s;
     }
     .add-scene-bar button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+    /* SNS tabs */
+    .sns-tab {
+      padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card); font-size: 13px; cursor: pointer; transition: all 0.15s;
+    }
+    .sns-tab:hover { background: var(--accent-light); border-color: var(--accent); }
+    .sns-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* Preset selector */
     .preset-section {
@@ -272,6 +280,21 @@
         <button onclick="addScene('message')">+ メッセージ</button>
         <button onclick="addScene('caption')">+ テロップ</button>
         <button onclick="addScene('ending')">+ エンディング</button>
+      </div>
+    </div>
+
+    <!-- SNS Text -->
+    <div class="meta-section">
+      <h2>SNS投稿テキスト</h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button onclick="generateSnsText('reels')" class="sns-tab" id="tab-reels">Instagram Reels</button>
+        <button onclick="generateSnsText('tiktok')" class="sns-tab" id="tab-tiktok">TikTok</button>
+        <button onclick="generateSnsText('shorts')" class="sns-tab" id="tab-shorts">YouTube Shorts</button>
+        <button onclick="generateSnsText('x')" class="sns-tab" id="tab-x">X (Twitter)</button>
+      </div>
+      <div id="snsOutput" style="position:relative;">
+        <textarea id="snsTextArea" rows="12" readonly style="width:100%;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;background:#fafaf8;"></textarea>
+        <button onclick="copySnsText()" id="snsCopyBtn" style="position:absolute;top:8px;right:8px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:12px;cursor:pointer;transition:all 0.15s;">コピー</button>
       </div>
     </div>
 
@@ -633,6 +656,10 @@
       scenario = JSON.parse(JSON.stringify(PRESETS[i].scenario));
       render();
       resetPreview();
+      // Regenerate SNS text for whichever tab is active
+      const activeTab = document.querySelector('.sns-tab.active');
+      const platform = activeTab ? activeTab.id.replace('tab-', '') : 'reels';
+      generateSnsText(platform);
     }
 
     function renderMeta() {
@@ -1040,6 +1067,120 @@
       isRecording = false;
     }
 
+    // ==================== SNS Text ====================
+    function generateSnsText(platform) {
+      // Highlight active tab
+      document.querySelectorAll('.sns-tab').forEach(t => t.classList.remove('active'));
+      const tab = document.getElementById('tab-' + platform);
+      if (tab) tab.classList.add('active');
+
+      // Extract content from scenario
+      const hookScene = scenario.scenes.find(s => s.type === 'hook');
+      const endingScene = scenario.scenes.find(s => s.type === 'ending');
+      const messages = scenario.scenes.filter(s => s.type === 'message');
+      const captions = scenario.scenes.filter(s => s.type === 'caption');
+
+      const hookText = hookScene?.text?.replace(/\n/g, '') || '';
+      const tagline = endingScene?.lines?.[0] || '';
+      const brandName = endingScene?.lines?.[1] || 'うめこ';
+      const cta = endingScene?.lines?.[2] || '';
+      const link = endingScene?.lines?.[3] || '';
+
+      // Build a short summary of the conversation conflict
+      const firstCaption = captions[0]?.text || '';
+
+      // Find umeko's message
+      const umekoMsg = messages.find(m => m.speaker === 'umeko');
+      const umekoFirstLine = umekoMsg?.text?.split('\n')[0] || '';
+
+      // Determine the situation theme
+      const title = scenario.title || '';
+
+      const hashtags = [
+        '#うめこ', '#LINE', '#会話',
+        '#人間関係', '#コミュニケーション',
+        '#夫婦', '#カップル', '#職場',
+        '#言い方', '#空気を読む',
+        '#あるある', '#共感',
+      ];
+
+      let text = '';
+
+      if (platform === 'reels') {
+        text = [
+          hookText,
+          '',
+          `${firstCaption}`,
+          '',
+          `💬 ${tagline}`,
+          '',
+          `🌸 ${brandName}`,
+          `${cta}`,
+          link ? `👉 ${link}` : '',
+          '',
+          hashtags.slice(0, 10).join(' '),
+        ].filter(Boolean).join('\n');
+      } else if (platform === 'tiktok') {
+        text = [
+          `${hookText} ${firstCaption}`,
+          '',
+          `${tagline}`,
+          `🌸${brandName}でLINEの空気が変わる`,
+          link ? `👉 ${link}` : '',
+          '',
+          hashtags.join(' '),
+        ].filter(Boolean).join('\n');
+      } else if (platform === 'shorts') {
+        text = [
+          `【${title || hookText}】`,
+          '',
+          hookText !== title ? hookText : '',
+          firstCaption,
+          '',
+          `${tagline}`,
+          `🌸 ${brandName} - ${cta}`,
+          link ? link : '',
+          '',
+          hashtags.slice(0, 8).join(' '),
+        ].filter(Boolean).join('\n');
+      } else if (platform === 'x') {
+        // X has 280 char limit, keep it tight
+        const body = [
+          hookText,
+          '',
+          firstCaption,
+          `→ ${tagline}`,
+          '',
+          `🌸${brandName}`,
+          link ? `${link}` : '',
+          '',
+          hashtags.slice(0, 5).join(' '),
+        ].filter(Boolean).join('\n');
+        text = body.length > 280 ? body.slice(0, 277) + '…' : body;
+      }
+
+      document.getElementById('snsTextArea').value = text;
+    }
+
+    function copySnsText() {
+      const textarea = document.getElementById('snsTextArea');
+      const text = textarea.value;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('snsCopyBtn');
+        btn.textContent = 'コピーしました！';
+        btn.style.background = 'var(--accent)';
+        btn.style.color = '#fff';
+        btn.style.borderColor = 'var(--accent)';
+        setTimeout(() => {
+          btn.textContent = 'コピー';
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      });
+    }
+
     // ==================== Save / Load ====================
     function getSavedList() { return JSON.parse(localStorage.getItem('umeko_scenarios') || '{}'); }
     function saveScenario() {
@@ -1114,6 +1255,7 @@
     // ==================== Init ====================
     window.addEventListener('load', () => {
       render();
+      generateSnsText('reels');
       const initFrame = () => sendToPreview('init', scenario);
       const frame = document.getElementById('previewFrame');
       if (frame.contentDocument?.readyState === 'complete') initFrame();
