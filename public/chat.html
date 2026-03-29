@@ -150,37 +150,58 @@
       }
     }
 
-    // Typing sound using Web Audio API
+    // Typing sound using Web Audio API — soft tap sound
     let audioCtx = null;
     function playTypeSound() {
       try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
+        const t = audioCtx.currentTime;
+        // Soft "tok" using noise burst
+        const bufSize = audioCtx.sampleRate * 0.025;
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.15));
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        // Bandpass to make it sound like a key tap
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2000 + Math.random() * 1000;
+        filter.Q.value = 2;
         const gain = audioCtx.createGain();
-        osc.connect(gain);
+        gain.gain.value = 0.08;
+        src.connect(filter);
+        filter.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 800 + Math.random() * 400;
-        osc.type = 'sine';
-        gain.gain.value = 0.03;
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.05);
+        src.start(t);
       } catch(e) {}
     }
 
     function playSendSound() {
       try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
+        const t = audioCtx.currentTime;
+        // Two-tone "pop" sound
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
+        osc1.connect(gain);
+        osc2.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 1200;
-        osc.type = 'sine';
-        gain.gain.value = 0.06;
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.12);
+        osc1.frequency.setValueAtTime(880, t);
+        osc1.frequency.exponentialRampToValueAtTime(1320, t + 0.08);
+        osc2.frequency.setValueAtTime(1100, t);
+        osc2.frequency.exponentialRampToValueAtTime(1650, t + 0.08);
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc1.start(t);
+        osc2.start(t);
+        osc1.stop(t + 0.15);
+        osc2.stop(t + 0.15);
       } catch(e) {}
     }
 
@@ -311,8 +332,22 @@
         chatArea.innerHTML = '<div class="date-separator">今日</div>';
 
       } else if (target === 'dm' && currentContext === 'dm') {
-        // Switching between DMs (different person) — just clear messages
+        // Switching between DMs (different person) — clear and update header
         chatArea.innerHTML = '<div class="date-separator">今日</div>';
+        // Update DM header to show umeko (DM partner view)
+        const umekoForDm = members['umeko'];
+        if (umekoForDm) {
+          const avatarEl = document.getElementById('dmAvatar');
+          if (umekoForDm.avatarImage) {
+            avatarEl.innerHTML = `<img src="${umekoForDm.avatarImage}" alt="${umekoForDm.name}">`;
+          } else {
+            avatarEl.style.background = umekoForDm.avatarColor;
+            avatarEl.textContent = umekoForDm.avatarEmoji;
+          }
+          // Show DM partner name in header (the person chatting with umeko)
+          const partner = dmWith ? members[dmWith] : null;
+          document.getElementById('dmName').textContent = 'うめこ';
+        }
 
       } else if (target === 'group') {
         // Restore group chat
