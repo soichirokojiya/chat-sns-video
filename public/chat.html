@@ -254,6 +254,29 @@
       members = data.members;
       document.getElementById('groupName').textContent = data.groupName;
       document.getElementById('memberCount').textContent = `メンバー ${Object.keys(members).length}`;
+
+      // Show pre-existing messages (context before the main scenario)
+      if (data.preMessages && Array.isArray(data.preMessages)) {
+        for (const msg of data.preMessages) {
+          const member = members[msg.speaker];
+          if (!member) continue;
+          const row = document.createElement('div');
+          row.className = `message-row ${member.side} visible`;
+          const avatarHtml = member.avatarImage
+            ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
+            : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
+          row.innerHTML = `
+            ${avatarHtml}
+            <div class="bubble-wrapper">
+              <div class="speaker-name">${member.name}</div>
+              <div class="bubble">${msg.text}</div>
+              <div class="bubble-meta"><span class="time">${msg.time || ''}</span></div>
+            </div>
+          `;
+          chatArea.appendChild(row);
+        }
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
     };
 
     window.resetChat = function() {

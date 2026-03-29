@@ -368,6 +368,11 @@
           format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
+          preMessages: [
+            { speaker: "wife", text: "今日の夜ごはん何がいい？", time: "17:30" },
+            { speaker: "husband", text: "なんでもいいよ〜", time: "17:35" },
+            { speaker: "wife", text: "じゃあハンバーグにするね", time: "17:40" },
+          ],
           scenes: [
             { type: "hook", text: "夫婦LINE、ちょっと\n険悪になる前に──", durationMs: 3000 },
             { type: "message", speaker: "husband", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1800 },
@@ -390,6 +395,11 @@
           format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
+          preMessages: [
+            { speaker: "husband", text: "今日は早く帰れそう", time: "18:00" },
+            { speaker: "wife", text: "了解！洗濯物取り込んでおいてね", time: "18:05" },
+            { speaker: "husband", text: "👍", time: "18:06" },
+          ],
           scenes: [
             { type: "hook", text: "「なんで私ばっかり」\nって思ったこと、ない？", durationMs: 3000 },
             { type: "message", speaker: "wife", text: "ねえ、ゴミ出しお願いって\n昨日言ったよね？", time: "20:11", durationMs: 2000 },
@@ -411,6 +421,10 @@
           format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
+          preMessages: [
+            { speaker: "husband", text: "昨日のドラマ面白かったね", time: "10:00" },
+            { speaker: "wife", text: "ね！来週も楽しみ", time: "10:05" },
+          ],
           scenes: [
             { type: "hook", text: "既読ついたのに\n返事がこない──", durationMs: 3000 },
             { type: "message", speaker: "wife", text: "今週の土曜、実家行くけどいい？", time: "12:30", durationMs: 2000 },
@@ -432,6 +446,10 @@
           format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
+          preMessages: [
+            { speaker: "husband", text: "お疲れ、今帰り", time: "21:30" },
+            { speaker: "wife", text: "おかえり", time: "21:45" },
+          ],
           scenes: [
             { type: "hook", text: "長文LINEが来て\n固まったこと、ある？", durationMs: 3000 },
             { type: "message", speaker: "wife", text: "最近ずっと思ってたんだけど、\n私の話ちゃんと聞いてる？\nいつもスマホ見ながらだし、\n返事も適当だし、正直\n大事にされてる感じがしない。", time: "22:10", durationMs: 3000 },
@@ -456,6 +474,10 @@
             tanaka: { name: "田中", side: "left", avatarColor: "#78909C", avatarEmoji: "🧑" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "sato", text: "先週の会議資料、田中さんに\nお願いしてましたよね", time: "13:00" },
+            { speaker: "tanaka", text: "はい、対応中です！", time: "13:05" },
+          ],
           scenes: [
             { type: "hook", text: "催促したいけど\n言い方がむずかしい──", durationMs: 3000 },
             { type: "message", speaker: "sato", text: "田中さん、先週お願いした\n資料ってどうなってますか？", time: "14:20", durationMs: 2000 },
@@ -482,6 +504,10 @@
             junior: { name: "山田", side: "left", avatarColor: "#66BB6A", avatarEmoji: "🧑‍💻" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "manager", text: "山田くん、今日の進捗どう？", time: "16:00" },
+            { speaker: "junior", text: "報告書まとめてます！", time: "16:10" },
+          ],
           scenes: [
             { type: "hook", text: "注意したい。\nでも言い方がわからない──", durationMs: 3000 },
             { type: "message", speaker: "manager", text: "山田くん、今日の報告書\nミスが3箇所あったよ", time: "17:30", durationMs: 2000 },
@@ -508,6 +534,10 @@
             risa: { name: "りさ", side: "left", avatarColor: "#EF5350", avatarEmoji: "👧" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "yui", text: "そろそろ集まりたいね〜！", time: "18:30" },
+            { speaker: "mika", text: "いいね！いつにする？", time: "18:35" },
+          ],
           scenes: [
             { type: "hook", text: "グループの予定調整、\n誰かがいつもモヤる──", durationMs: 3000 },
             { type: "message", speaker: "yui", text: "来週の飲み会、土曜でいい？", time: "19:00", durationMs: 1800 },
@@ -533,6 +563,10 @@
             mamab: { name: "中村ママ", side: "left", avatarColor: "#4DB6AC", avatarEmoji: "👩‍🦰" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "mamab", text: "バザーの件、担当分けました！\nファイル送りますね", time: "9:00" },
+            { speaker: "mamaa", text: "ありがとうございます！", time: "9:10" },
+          ],
           scenes: [
             { type: "hook", text: "ママ友LINE、\n言い方ひとつが命取り──", durationMs: 3000 },
             { type: "message", speaker: "mamab", text: "今度のバザー、高橋さんの\n担当分まだですか？\nもう締切過ぎてるんですけど", time: "10:00", durationMs: 2500 },
@@ -558,6 +592,10 @@
             gf: { name: "ひな", side: "right", avatarColor: "#EC407A", avatarEmoji: "👩" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "bf", text: "今日ありがとね！", time: "21:30" },
+            { speaker: "gf", text: "うん、こちらこそ！", time: "21:35" },
+          ],
           scenes: [
             { type: "hook", text: "「怒ってる？」「別に」\nこのループ、終わらせたい──", durationMs: 3000 },
             { type: "message", speaker: "bf", text: "今日楽しかったね", time: "22:00", durationMs: 1800 },
@@ -584,6 +622,10 @@
             staff: { name: "田村", side: "left", avatarColor: "#7986CB", avatarEmoji: "🧑" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "owner", text: "今日のチェックイン3組です", time: "8:00" },
+            { speaker: "staff", text: "承知しました！準備します", time: "8:05" },
+          ],
           scenes: [
             { type: "hook", text: "言い方ひとつで\nスタッフの士気が変わる──", durationMs: 3000 },
             { type: "message", speaker: "owner", text: "田村さん、305号室の\n清掃チェックしてないよね？\n昨日もお客様から指摘あったよ", time: "09:00", durationMs: 2500 },
@@ -610,6 +652,10 @@
             daughter: { name: "みさき", side: "left", avatarColor: "#AB47BC", avatarEmoji: "👧" },
             umeko: { name: "うめこ", side: "left", avatarColor: "#F5C842", avatarEmoji: "🌸", avatarImage: "umeko-icon.png" }
           },
+          preMessages: [
+            { speaker: "mom", text: "みんな元気にしてる？😊", time: "9:00" },
+            { speaker: "daughter", text: "元気だよ〜！", time: "9:10" },
+          ],
           scenes: [
             { type: "hook", text: "家族LINE、\n温度差がちょっとツラい──", durationMs: 3000 },
             { type: "message", speaker: "mom", text: "お盆はみんなで帰ってきてね！\nおばあちゃんも楽しみにしてるよ😊", time: "10:00", durationMs: 2200 },
