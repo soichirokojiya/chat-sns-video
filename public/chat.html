@@ -328,13 +328,23 @@
           document.getElementById('dmName').textContent = umeko.name;
         }
 
-        // Clear chat for DM
-        chatArea.innerHTML = '<div class="date-separator">今日</div>';
+        // Clear chat for DM - explicit removal
+        while (chatArea.firstChild) chatArea.removeChild(chatArea.firstChild);
+        const dmSep = document.createElement('div');
+        dmSep.className = 'date-separator';
+        dmSep.textContent = '今日';
+        chatArea.appendChild(dmSep);
+        chatArea.scrollTop = 0;
 
       } else if (target === 'dm' && currentContext === 'dm') {
-        // Switching between DMs (different person) — clear and update header
-        chatArea.innerHTML = '<div class="date-separator">今日</div>';
-        // Update DM header to show umeko (DM partner view)
+        // Switching between DMs — remove all messages explicitly then reset
+        while (chatArea.firstChild) chatArea.removeChild(chatArea.firstChild);
+        const sep = document.createElement('div');
+        sep.className = 'date-separator';
+        sep.textContent = '今日';
+        chatArea.appendChild(sep);
+        chatArea.scrollTop = 0;
+        // Update DM header
         const umekoForDm = members['umeko'];
         if (umekoForDm) {
           const avatarEl = document.getElementById('dmAvatar');
