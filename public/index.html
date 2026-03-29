@@ -390,7 +390,7 @@
             { type: "message", speaker: "umeko", effect: "glow", text: "あかねさん、さっきのやりとり\n気になったので 😌\nたかしさんも申し訳なく思ってると\n思いますよ。\n「今週どこかで早く帰れる日ある？」\nって聞いてみるのはどうですか？", time: "18:45", durationMs: 3500 },
             { type: "message", speaker: "wife", text: "…たしかに、そう聞けばよかった", time: "18:46", durationMs: 2500 },
             { type: "switchContext", to: "dm", dmWith: "husband", durationMs: 800 },
-            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、お仕事おつかれさまです。\nあかねさんは寂しいんだと思います。\n「遅くなってごめん、◯曜は早く帰るね」\nって伝えると安心するかもです 😊", time: "18:45", durationMs: 3500 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、お仕事おつかれさまです。\nあかねさんは寂しいんだと思います。\n「遅くなってごめん、水曜は早く帰るね」\nって伝えると安心するかもです 😊", time: "18:45", durationMs: 3500 },
             { type: "message", speaker: "husband", text: "そっか…ちょっと言い方きつかったな", time: "18:46", durationMs: 2500 },
             { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
             { type: "switchContext", to: "group", durationMs: 800 },
@@ -404,7 +404,7 @@
         label: "🧹 夫婦で家事分担もめる",
         scenario: {
           title: "夫婦LINE - 家事分担篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
           preMessages: [
@@ -424,11 +424,19 @@
             { type: "message", speaker: "husband", text: "あ、忘れてた\nごめんごめん", time: "20:12", durationMs: 1800 },
             { type: "message", speaker: "wife", text: "毎回「ごめん」で終わるよね\nもういいけど", time: "20:12", durationMs: 2200 },
             { type: "caption", text: "「もういい」は全然よくない…", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "あかねさんは繰り返しお願いするのが\nしんどいんですよね。\nたかしさん、スマホのリマインダーに\n\"ゴミ出し\"を毎週セットしておくのは\nどうですか？ 🕐", time: "20:13", durationMs: 4000 },
-            { type: "message", speaker: "husband", text: "たしかに、それならいけるわ\n今セットした", time: "20:14", durationMs: 2000 },
-            { type: "message", speaker: "wife", text: "…ありがと 😊", time: "20:14", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "wife", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "あかねさん、何度もお願いするの\n疲れますよね 😌\n「毎週のゴミ出し、リマインダーに\n入れてもらえると助かる」って\n伝えてみるのはどうですか？", time: "20:13", durationMs: 3500 },
+            { type: "message", speaker: "wife", text: "…それなら角が立たないかも", time: "20:14", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "husband", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、忘れちゃうの\n自分でもわかってますよね 😌\nスマホのリマインダーに\n\"ゴミ出し\"セットしておくと\n言われる前にできますよ", time: "20:13", durationMs: 3500 },
+            { type: "message", speaker: "husband", text: "たしかに、今セットするわ", time: "20:14", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "husband", text: "リマインダー入れたから\nもう忘れないよ。ごめんな", time: "20:18", durationMs: 2500 },
+            { type: "message", speaker: "wife", text: "ありがと、助かる 😊", time: "20:19", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -436,7 +444,7 @@
         label: "😶 既読無視で空気が悪くなる",
         scenario: {
           title: "夫婦LINE - 既読スルー篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
           preMessages: [
@@ -456,11 +464,21 @@
             { type: "caption", text: "既読 12:31 ─── 3時間経過", durationMs: 2000 },
             { type: "message", speaker: "wife", text: "……見てるよね？", time: "15:45", durationMs: 2000 },
             { type: "message", speaker: "husband", text: "ごめん会議だった\n土曜ね、了解", time: "15:50", durationMs: 2000 },
-            { type: "message", speaker: "wife", text: "一言「あとで返す」って\n言えないの？", time: "15:51", durationMs: 2000 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "たかしさんは忙しかったんですね。\nあかねさんは返事がないと\n不安になりますよね 😌\n忙しいときは「あとで返すね」の\n一言があると安心しますよ", time: "15:52", durationMs: 4000 },
-            { type: "message", speaker: "husband", text: "たしかに。次からそうする", time: "15:53", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "message", speaker: "wife", text: "一言「あとで返す」って\n言えないの？", time: "15:51", effect: "shake", durationMs: 2000 },
+            { type: "caption", text: "空気がピリついてきた…", durationMs: 1500 },
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "wife", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "あかねさん、返事がないと\n不安になりますよね 😌\n「忙しいときは一言だけでいいから\n既読だよって教えて」って\n伝えてみませんか？", time: "15:52", durationMs: 3500 },
+            { type: "message", speaker: "wife", text: "…そう伝えればいいんだ", time: "15:53", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "husband", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、会議中で\n大変でしたね 😌\nあかねさんは心配してたんです。\n忙しいときは「あとで返すね」の\n一言があると安心しますよ", time: "15:52", durationMs: 3500 },
+            { type: "message", speaker: "husband", text: "そっか、次からそうする", time: "15:53", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "husband", text: "さっきはごめん。\n次から忙しくても一言返すね", time: "15:55", durationMs: 2500 },
+            { type: "message", speaker: "wife", text: "ありがと、それだけで安心する ☺️", time: "15:56", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -468,7 +486,7 @@
         label: "📝 長文で責められて返信に困る",
         scenario: {
           title: "夫婦LINE - 長文篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
           preMessages: [
@@ -487,11 +505,20 @@
             { type: "message", speaker: "wife", text: "最近ずっと思ってたんだけど、\n私の話ちゃんと聞いてる？\nいつもスマホ見ながらだし、\n返事も適当だし、正直\n大事にされてる感じがしない。", time: "22:10", durationMs: 3000 },
             { type: "caption", text: "なんて返せば……", durationMs: 1500 },
             { type: "message", speaker: "husband", text: "え、そんなつもりないけど…", time: "22:15", durationMs: 2000 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "あかねさんはずっと\n溜めてたんですね。\nたかしさん、まずは\n\"そう感じさせてたんだね、ごめん\"\nって受け止めてみませんか？ 😌\n解決は、その後でも大丈夫です", time: "22:16", durationMs: 4000 },
-            { type: "message", speaker: "husband", text: "…そう感じさせてたんだな、ごめん\n話聞かせて", time: "22:18", durationMs: 2200 },
-            { type: "message", speaker: "wife", text: "……ありがとう", time: "22:19", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "会話が止まりそう…", durationMs: 1500 },
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "husband", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、長文で\nびっくりしましたよね 😌\nまずは「そう感じさせてたんだね、\nごめん」って受け止めるだけで\n大丈夫ですよ", time: "22:16", durationMs: 3500 },
+            { type: "message", speaker: "husband", text: "…そうか、まず受け止めるのか", time: "22:17", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "wife", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "あかねさん、ずっと溜めてたんですね。\n気持ちを伝えられたの、\nすごいことですよ 😌\nたかしさんも受け止めようと\nしてると思います", time: "22:16", durationMs: 3500 },
+            { type: "message", speaker: "wife", text: "…ちゃんと読んでくれるかな", time: "22:17", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "husband", text: "そう感じさせてたんだな、ごめん\nちゃんと話聞かせて", time: "22:20", durationMs: 2500 },
+            { type: "message", speaker: "wife", text: "……ありがとう", time: "22:21", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -499,7 +526,7 @@
         label: "💼 仕事グループで催促しづらい",
         scenario: {
           title: "仕事LINE - 催促篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "プロジェクトA",
           members: {
             sato: { name: "佐藤", side: "right", avatarColor: "#5C6BC0", avatarEmoji: "👔" },
@@ -523,11 +550,19 @@
             { type: "message", speaker: "sato", text: "明日の会議で使うので\n今日中にいただけると…", time: "16:30", durationMs: 2000 },
             { type: "message", speaker: "tanaka", text: "すみません、対応します", time: "16:45", durationMs: 1800 },
             { type: "caption", text: "ちょっと空気が固い…", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "佐藤さん、お急ぎですよね。\n田中さんも抱えてるタスクが\nあるかもしれません 😌\n\"もし手が回らなければ\n一部こちらで巻き取りますよ\"\nと伝えるとスムーズですよ", time: "16:46", durationMs: 4000 },
-            { type: "message", speaker: "sato", text: "田中さん、もし厳しければ\n一部こっちでやるので言ってね", time: "16:47", durationMs: 2000 },
-            { type: "message", speaker: "tanaka", text: "ありがとうございます！\n半分お願いしてもいいですか？", time: "16:48", durationMs: 2000 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "sato", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "佐藤さん、お急ぎですよね 😌\n「もし手が回らなければ\n一部こちらで巻き取りますよ」\nと声をかけると\n相手も頼みやすくなりますよ", time: "16:46", durationMs: 3500 },
+            { type: "message", speaker: "sato", text: "なるほど、そう伝えてみます", time: "16:47", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "tanaka", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "田中さん、タスク抱えて\n大変ですよね 😌\n厳しい部分があれば\n正直に相談して大丈夫ですよ。\n佐藤さんもわかってくれます", time: "16:46", durationMs: 3500 },
+            { type: "message", speaker: "tanaka", text: "…ちょっと相談してみます", time: "16:47", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "sato", text: "田中さん、もし厳しければ\n一部こっちでやるよ。遠慮なく言って", time: "16:50", durationMs: 2500 },
+            { type: "message", speaker: "tanaka", text: "ありがとうございます！\n半分お願いしてもいいですか？", time: "16:51", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -535,7 +570,7 @@
         label: "😤 部下に注意したいが強く言いたくない",
         scenario: {
           title: "仕事LINE - 注意篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "チームB",
           members: {
             manager: { name: "鈴木(上司)", side: "right", avatarColor: "#6D4C41", avatarEmoji: "👨‍💼" },
@@ -558,11 +593,19 @@
             { type: "message", speaker: "junior", text: "すみません…\n気をつけます", time: "17:31", durationMs: 1800 },
             { type: "message", speaker: "manager", text: "先週も同じこと言ったよね？", time: "17:31", durationMs: 2000 },
             { type: "caption", text: "正論だけど、これ以上は萎縮する…", durationMs: 1800 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "鈴木さんの伝えたいこと、\nわかります 😌\nでも\"どこを確認すれば防げたか\"\nを一緒に考える形にすると\n山田さんも次に活かしやすいですよ", time: "17:32", durationMs: 4000 },
-            { type: "message", speaker: "manager", text: "山田くん、提出前に\nここチェックリストで確認してみて\n一緒に仕組み作ろう", time: "17:33", durationMs: 2200 },
-            { type: "message", speaker: "junior", text: "はい！やってみます！", time: "17:34", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "manager", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "鈴木さん、伝えたい気持ち\nわかります 😌\n「どこを確認すれば防げたか」を\n一緒に考える形にすると\n山田さんも成長しやすいですよ", time: "17:32", durationMs: 3500 },
+            { type: "message", speaker: "manager", text: "たしかに、仕組みで解決か", time: "17:33", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "junior", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "山田さん、落ち込みますよね 😌\n鈴木さんは期待してるからこそ\n言ってるんだと思います。\n提出前のチェックリスト、\n作ってみませんか？", time: "17:32", durationMs: 3500 },
+            { type: "message", speaker: "junior", text: "チェックリスト、やってみます", time: "17:33", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "manager", text: "山田くん、提出前に\nチェックリストで確認してみて\n一緒に仕組み作ろう", time: "17:35", durationMs: 2500 },
+            { type: "message", speaker: "junior", text: "はい！ありがとうございます！", time: "17:36", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -570,7 +613,7 @@
         label: "📅 友達同士で予定調整がギスる",
         scenario: {
           title: "友達LINE - 予定調整篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "大学メンバー",
           members: {
             yui: { name: "ゆい", side: "right", avatarColor: "#AB47BC", avatarEmoji: "👱‍♀️" },
@@ -595,11 +638,19 @@
             { type: "message", speaker: "mika", text: "私は金曜がいいんだけど…", time: "19:02", durationMs: 1800 },
             { type: "message", speaker: "risa", text: "え〜もう土曜で決まりでよくない？\n合わせてよ", time: "19:03", durationMs: 2200 },
             { type: "caption", text: "ちょっとトゲが立ってきた…", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "みんな楽しみにしてるからこそ\nですよね 😌\n調整さん（日程調整ツール）で\n候補日を出し合うとスムーズですよ。\nどの日でも来れる人で楽しみましょう", time: "19:04", durationMs: 4000 },
-            { type: "message", speaker: "risa", text: "たしかに！ごめんね、\n決めつけちゃって", time: "19:05", durationMs: 2000 },
-            { type: "message", speaker: "mika", text: "全然！調整さん送るね〜", time: "19:05", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "risa", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "りささん、早く決めたい\n気持ちわかります 😌\nでもみかさんにも都合があるので\n「候補日いくつか出そう」って\n提案してみませんか？", time: "19:04", durationMs: 3500 },
+            { type: "message", speaker: "risa", text: "たしかに、押しつけちゃったかも", time: "19:05", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "mika", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "みかさん、自分の都合\nちゃんと言えて偉いですよ 😌\n調整さんで候補日出し合えば\nみんな納得しやすいですよ", time: "19:04", durationMs: 3500 },
+            { type: "message", speaker: "mika", text: "調整さん送ってみるね！", time: "19:05", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "risa", text: "ごめんね決めつけちゃって！\n候補日出し合おう〜", time: "19:08", durationMs: 2500 },
+            { type: "message", speaker: "mika", text: "全然！調整さん送るね〜 ✨", time: "19:09", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -607,7 +658,7 @@
         label: "🏫 ママ友連絡で言い方に困る",
         scenario: {
           title: "ママ友LINE - 連絡篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "2年3組 保護者",
           members: {
             mamaa: { name: "高橋ママ", side: "right", avatarColor: "#F48FB1", avatarEmoji: "👩" },
@@ -630,11 +681,19 @@
             { type: "message", speaker: "mamaa", text: "すみません、子どもが体調崩してて\nバタバタしてました…", time: "10:05", durationMs: 2200 },
             { type: "message", speaker: "mamab", text: "みんな忙しい中やってるので…", time: "10:06", durationMs: 2000 },
             { type: "caption", text: "正論だけどキツい…", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "中村さん、まとめ役\nお疲れさまです 😌\n高橋さんも大変な状況ですね。\n\"今週中に難しければ\nこちらで一部引き取りますよ\"\nとお声がけするとお互い楽ですよ", time: "10:07", durationMs: 4000 },
-            { type: "message", speaker: "mamab", text: "そうですね、高橋さん\n無理しないでくださいね\n一部こちらでやりますので", time: "10:08", durationMs: 2200 },
-            { type: "message", speaker: "mamaa", text: "ありがとうございます😭\n明後日までに必ず出します！", time: "10:09", durationMs: 2000 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "mamab", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "中村さん、まとめ役\nお疲れさまです 😌\n高橋さんも事情があるみたいです。\n「無理なら一部引き取りますよ」と\n声をかけるとお互い楽ですよ", time: "10:07", durationMs: 3500 },
+            { type: "message", speaker: "mamab", text: "そうですね、少しキツかったかも", time: "10:08", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "mamaa", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "高橋さん、お子さんのこと\n大変でしたね 😌\n中村さんも心配してると思います。\nいつまでにできそうか\n伝えると安心してもらえますよ", time: "10:07", durationMs: 3500 },
+            { type: "message", speaker: "mamaa", text: "明後日までに出しますって伝えます", time: "10:08", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "mamab", text: "高橋さん、無理しないでくださいね\n一部こちらでやりますので", time: "10:12", durationMs: 2500 },
+            { type: "message", speaker: "mamaa", text: "ありがとうございます😭\n明後日までに必ず出します！", time: "10:13", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -680,7 +739,7 @@
         label: "🏨 スタッフ連絡でトゲが立つ",
         scenario: {
           title: "仕事LINE - スタッフ連絡篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "〇〇旅館 スタッフ",
           members: {
             owner: { name: "オーナー", side: "right", avatarColor: "#8D6E63", avatarEmoji: "👨‍💼" },
@@ -703,11 +762,19 @@
             { type: "message", speaker: "staff", text: "すみません、\nチェックしたつもりだったんですが…", time: "09:05", durationMs: 2000 },
             { type: "message", speaker: "owner", text: "「つもり」じゃ困るんだけど", time: "09:05", durationMs: 2000 },
             { type: "caption", text: "正論だけど、これじゃ萎縮する…", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "オーナーの品質へのこだわり、\n大事ですよね 😌\n田村さんも頑張ってるはず。\n\"チェックリストを一緒に見直して、\n抜けやすいポイントを確認しませんか\"\nと提案してみるのはどうですか？", time: "09:06", durationMs: 4000 },
-            { type: "message", speaker: "owner", text: "そうだね。田村さん、\n午後にチェックリスト一緒に\n見直そうか", time: "09:07", durationMs: 2200 },
-            { type: "message", speaker: "staff", text: "はい！お願いします！", time: "09:08", durationMs: 1800 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "owner", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "オーナー、品質へのこだわり\n大事ですよね 😌\n「チェックリストを一緒に見直そう」\nと提案すると\n田村さんも前向きになれますよ", time: "09:06", durationMs: 3500 },
+            { type: "message", speaker: "owner", text: "たしかに、仕組みで改善するか", time: "09:07", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "staff", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "田村さん、頑張ってるの\nわかってますよ 😌\nオーナーも怒ってるんじゃなくて\n心配してるんだと思います。\nチェックリスト見直しを\n提案してみませんか？", time: "09:06", durationMs: 3500 },
+            { type: "message", speaker: "staff", text: "そうですね、前向きに取り組みます", time: "09:07", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "owner", text: "田村さん、午後にチェックリスト\n一緒に見直そうか", time: "09:10", durationMs: 2500 },
+            { type: "message", speaker: "staff", text: "はい！お願いします！", time: "09:11", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -715,7 +782,7 @@
         label: "👨‍👩‍👧 家族LINEで温度差が出る",
         scenario: {
           title: "家族LINE - 温度差篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "田中家",
           members: {
             mom: { name: "お母さん", side: "right", avatarColor: "#E91E63", avatarEmoji: "👩" },
@@ -743,11 +810,20 @@
             { type: "message", speaker: "mom", text: "けんた？", time: "14:00", durationMs: 1500 },
             { type: "message", speaker: "son", text: "ちょっとわかんない\nまた連絡する", time: "14:30", durationMs: 2000 },
             { type: "message", speaker: "mom", text: "…そう", time: "14:31", durationMs: 1500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "お母さん、寂しいですよね 😌\nけんたさんも予定が\nまだ見えないだけかも。\n\"決まったら教えてね、\n無理しなくていいからね\"\nって添えると返事しやすいですよ", time: "14:32", durationMs: 4000 },
-            { type: "message", speaker: "mom", text: "けんた、無理しなくていいからね\n決まったら教えて😊", time: "14:33", durationMs: 2000 },
-            { type: "message", speaker: "son", text: "ありがと\n8/12-14なら行けそう", time: "14:40", durationMs: 2000 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "caption", text: "温度差で空気が重くなる…", durationMs: 1500 },
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "mom", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "お母さん、寂しいですよね 😌\nけんたさんも予定が\nまだ見えないだけだと思います。\n「無理しなくていいからね」って\n添えると返事しやすいですよ", time: "14:32", durationMs: 3500 },
+            { type: "message", speaker: "mom", text: "そうだね、プレッシャーかけちゃったかも", time: "14:33", durationMs: 2500 },
+            { type: "switchContext", to: "dm", dmWith: "son", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "けんたさん、忙しいですよね 😌\nお母さんは会いたいだけで\n責めてるわけじゃないですよ。\n行ける日だけでも伝えると\n喜ぶと思います", time: "14:32", durationMs: 3500 },
+            { type: "message", speaker: "son", text: "…ちょっと調べてみるわ", time: "14:33", durationMs: 2500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "mom", text: "けんた、無理しなくていいからね\n決まったら教えて😊", time: "14:38", durationMs: 2500 },
+            { type: "message", speaker: "son", text: "ありがと\n8/12-14なら行けそう", time: "14:40", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       }
