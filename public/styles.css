@@ -15,63 +15,85 @@ body {
   flex-direction: column;
 }
 
-/* === Status bar === */
+/* === Status bar (iOS style) === */
 .status-bar {
   height: 88px;
   background: #6E8B96;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 0 40px;
   color: #fff;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 600;
-  letter-spacing: 0.05em;
 }
+.status-bar-left { display: flex; gap: 12px; align-items: center; }
+.status-bar-right { display: flex; gap: 16px; align-items: center; font-size: 26px; }
 
 /* === Header === */
 .chat-header {
-  height: 120px;
+  height: 110px;
   background: #6E8B96;
   display: flex;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 32px;
   color: #fff;
-  border-bottom: 1px solid rgba(0,0,0,0.1);
+  gap: 20px;
 }
 .chat-header .back-arrow {
-  font-size: 48px;
-  margin-right: 24px;
+  font-size: 44px;
+  opacity: 0.9;
+}
+.chat-header .header-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .chat-header .group-name {
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 700;
+  line-height: 1.3;
 }
 .chat-header .member-count {
-  font-size: 28px;
+  font-size: 24px;
+  opacity: 0.7;
+}
+.chat-header .header-icons {
+  display: flex;
+  gap: 28px;
+  font-size: 40px;
   opacity: 0.8;
-  margin-left: 16px;
 }
 
 /* === Chat area === */
 .chat-area {
   flex: 1;
   background: #7494A5;
-  padding: 40px 32px;
+  padding: 32px 28px;
+  padding-bottom: 8px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   overflow: hidden;
+}
+
+/* === Date separator === */
+.date-separator {
+  text-align: center;
+  font-size: 22px;
+  color: rgba(255,255,255,0.6);
+  padding: 8px 0 4px;
 }
 
 /* === Message row === */
 .message-row {
   display: flex;
   align-items: flex-end;
-  gap: 16px;
-  max-width: 85%;
+  gap: 14px;
+  max-width: 82%;
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateY(16px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .message-row.visible {
   opacity: 1;
@@ -87,13 +109,13 @@ body {
 
 /* === Avatar === */
 .avatar {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 36px;
   flex-shrink: 0;
   object-fit: cover;
 }
@@ -102,45 +124,45 @@ body {
 .bubble-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 .speaker-name {
-  font-size: 26px;
-  color: #fff;
-  opacity: 0.9;
-  padding-left: 8px;
+  font-size: 22px;
+  color: rgba(255,255,255,0.8);
+  padding-left: 6px;
+  font-weight: 500;
 }
 .right .speaker-name {
   text-align: right;
-  padding-right: 8px;
+  padding-right: 6px;
   padding-left: 0;
 }
 .bubble {
-  padding: 28px 36px;
-  border-radius: 32px;
-  font-size: 36px;
-  line-height: 1.6;
+  padding: 22px 30px;
+  border-radius: 28px;
+  font-size: 32px;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
   position: relative;
-  max-width: 720px;
+  max-width: 680px;
 }
 .left .bubble {
   background: #fff;
-  color: #333;
-  border-top-left-radius: 8px;
+  color: #111;
+  border-top-left-radius: 6px;
 }
 .right .bubble {
-  background: #85E249;
-  color: #333;
-  border-top-right-radius: 8px;
+  background: #8CE34A;
+  color: #111;
+  border-top-right-radius: 6px;
 }
 /* うめこ special */
 .umeko .bubble {
   background: #FFF8E1;
-  color: #333;
-  border: 3px solid #F5C842;
-  border-top-left-radius: 8px;
+  color: #111;
+  border: 2px solid #F5C842;
+  border-top-left-radius: 6px;
 }
 
 .bubble-meta {
@@ -150,15 +172,81 @@ body {
 }
 .left .bubble-meta {
   justify-content: flex-start;
-  padding-left: 8px;
+  padding-left: 6px;
 }
 .right .bubble-meta {
   justify-content: flex-end;
-  padding-right: 8px;
+  padding-right: 6px;
 }
 .time {
-  font-size: 24px;
-  color: rgba(255,255,255,0.7);
+  font-size: 20px;
+  color: rgba(255,255,255,0.55);
+}
+.read-receipt {
+  font-size: 20px;
+  color: rgba(255,255,255,0.55);
+}
+
+/* === Input bar (fake) === */
+.input-bar {
+  height: 110px;
+  background: #F7F7F7;
+  border-top: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+}
+.input-bar .input-icon {
+  font-size: 44px;
+  color: #888;
+  flex-shrink: 0;
+}
+.input-bar .input-field {
+  flex: 1;
+  height: 68px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 34px;
+  padding: 0 28px;
+  font-size: 30px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.input-bar .input-field .typing-text {
+  white-space: nowrap;
+  color: #333;
+}
+.input-bar .typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 32px;
+  background: #06C755;
+  margin-left: 2px;
+  animation: cursorBlink 1s step-end infinite;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.input-bar .send-btn {
+  width: 68px;
+  height: 68px;
+  background: #06C755;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #fff;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.input-bar .send-btn.active {
+  opacity: 1;
 }
 
 /* === Hook / Caption overlay === */
@@ -184,7 +272,7 @@ body {
   position: relative;
   z-index: 1;
   color: #fff;
-  font-size: 64px;
+  font-size: 60px;
   font-weight: 800;
   text-align: center;
   line-height: 1.5;
@@ -195,7 +283,7 @@ body {
 /* === Caption bar (bottom third) === */
 .caption-bar {
   position: absolute;
-  bottom: 200px;
+  bottom: 180px;
   left: 0; right: 0;
   display: flex;
   justify-content: center;
@@ -209,10 +297,10 @@ body {
 .caption-text {
   background: rgba(0,0,0,0.6);
   color: #fff;
-  font-size: 44px;
+  font-size: 40px;
   font-weight: 700;
-  padding: 20px 48px;
-  border-radius: 16px;
+  padding: 18px 44px;
+  border-radius: 14px;
   text-align: center;
 }
 .caption-text.highlight {
@@ -229,7 +317,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 60px;
+  gap: 56px;
   z-index: 200;
   opacity: 0;
   transition: opacity 0.6s ease;
@@ -238,14 +326,14 @@ body {
   opacity: 1;
 }
 .ending-tagline {
-  font-size: 56px;
+  font-size: 52px;
   font-weight: 700;
   color: #555;
   text-align: center;
   line-height: 1.5;
 }
 .ending-brand {
-  font-size: 96px;
+  font-size: 88px;
   font-weight: 900;
   color: #E8913A;
   display: flex;
@@ -260,7 +348,7 @@ body {
   border-radius: 50%;
 }
 .ending-cta {
-  font-size: 40px;
+  font-size: 38px;
   color: #888;
   font-weight: 500;
 }

@@ -1005,13 +1005,19 @@
 
       try {
         const { FFmpeg } = FFmpegWASM;
-        const { fetchFile } = FFmpegUtil;
+        const { fetchFile, toBlobURL } = FFmpegUtil;
         const ffmpeg = new FFmpeg();
 
-        await ffmpeg.load({
-          coreURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-          wasmURL: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
-        });
+        document.getElementById('recProgress').textContent = 'ffmpegを読み込み中…（初回は30秒ほどかかります）';
+
+        // Convert all resources to same-origin blob URLs to avoid COEP/Worker restrictions
+        const [coreURL, wasmURL, workerURL] = await Promise.all([
+          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript'),
+          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm'),
+          toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js', 'text/javascript'),
+        ]);
+
+        await ffmpeg.load({ coreURL, wasmURL, classWorkerURL: workerURL });
 
         // Write each frame PNG and build concat file
         let concatContent = '';

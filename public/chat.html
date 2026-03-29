@@ -7,13 +7,47 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="status-bar">18:42</div>
-  <div class="chat-header">
-    <span class="back-arrow">&lt;</span>
-    <span class="group-name" id="groupName">家族グループ</span>
-    <span class="member-count" id="memberCount">(3)</span>
+  <!-- Status bar (iOS-like) -->
+  <div class="status-bar">
+    <div class="status-bar-left">
+      <span>18:42</span>
+    </div>
+    <div class="status-bar-right">
+      <span>📶</span>
+      <span>🔋</span>
+    </div>
   </div>
-  <div class="chat-area" id="chatArea"></div>
+
+  <!-- Chat header -->
+  <div class="chat-header">
+    <span class="back-arrow">‹</span>
+    <div class="header-center">
+      <span class="group-name" id="groupName">家族グループ</span>
+      <span class="member-count" id="memberCount">メンバー 3</span>
+    </div>
+    <div class="header-icons">
+      <span>📞</span>
+      <span>☰</span>
+    </div>
+  </div>
+
+  <!-- Date separator -->
+  <div class="chat-area" id="chatArea">
+    <div class="date-separator" id="dateSep">今日</div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="input-bar" id="inputBar">
+    <span class="input-icon">＋</span>
+    <div class="input-field" id="inputField">
+      <span class="typing-text" id="typingText"></span>
+      <span class="typing-cursor" id="typingCursor" style="display:none"></span>
+    </div>
+    <span class="input-icon">🎤</span>
+    <div class="send-btn" id="sendBtn">▶</div>
+  </div>
+
+  <!-- Overlays -->
   <div class="overlay" id="overlay">
     <div class="overlay-bg"></div>
     <div class="overlay-text" id="overlayText"></div>
@@ -38,13 +72,49 @@
     const captionBar = document.getElementById('captionBar');
     const captionText = document.getElementById('captionText');
     const endingScreen = document.getElementById('endingScreen');
+    const typingText = document.getElementById('typingText');
+    const typingCursor = document.getElementById('typingCursor');
+    const sendBtn = document.getElementById('sendBtn');
 
     let members = {};
+    let typingTimer = null;
 
     function hideAll() {
       overlay.classList.remove('visible');
       captionBar.classList.remove('visible');
       endingScreen.classList.remove('visible');
+    }
+
+    function clearTyping() {
+      if (typingTimer) { clearInterval(typingTimer); typingTimer = null; }
+      typingText.textContent = '';
+      typingCursor.style.display = 'none';
+      sendBtn.classList.remove('active');
+    }
+
+    // Simulate typing in the input bar before a "right" side message
+    function simulateTyping(text, callback) {
+      clearTyping();
+      // Only show first line, truncated
+      const displayText = text.split('\n')[0].slice(0, 30);
+      let idx = 0;
+      typingCursor.style.display = 'inline-block';
+
+      typingTimer = setInterval(() => {
+        if (idx < displayText.length) {
+          typingText.textContent = displayText.slice(0, idx + 1);
+          idx++;
+          if (idx > 3) sendBtn.classList.add('active');
+        } else {
+          clearInterval(typingTimer);
+          typingTimer = null;
+          // Brief pause then "send"
+          setTimeout(() => {
+            clearTyping();
+            if (callback) callback();
+          }, 200);
+        }
+      }, 60);
     }
 
     function showHook(text) {
@@ -53,27 +123,41 @@
       overlay.classList.add('visible');
     }
 
-    function showMessage(scene) {
+    function showMessage(scene, skipTyping) {
       hideAll();
       const member = members[scene.speaker];
       if (!member) return;
-      const row = document.createElement('div');
-      row.className = `message-row ${member.side}`;
-      if (scene.speaker === 'umeko') row.classList.add('umeko');
-      const avatarHtml = member.avatarImage
-        ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
-        : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
-      row.innerHTML = `
-        ${avatarHtml}
-        <div class="bubble-wrapper">
-          <div class="speaker-name">${member.name}</div>
-          <div class="bubble">${scene.text}</div>
-          <div class="bubble-meta"><span class="time">${scene.time || ''}</span></div>
-        </div>
-      `;
-      chatArea.appendChild(row);
-      chatArea.scrollTop = chatArea.scrollHeight;
-      requestAnimationFrame(() => requestAnimationFrame(() => row.classList.add('visible')));
+
+      const doShow = () => {
+        const row = document.createElement('div');
+        row.className = `message-row ${member.side}`;
+        if (scene.speaker === 'umeko') row.classList.add('umeko');
+        const avatarHtml = member.avatarImage
+          ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
+          : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
+
+        // Add read receipt for right-side messages
+        const readHtml = member.side === 'right' ? '<span class="read-receipt">既読</span>' : '';
+
+        row.innerHTML = `
+          ${avatarHtml}
+          <div class="bubble-wrapper">
+            <div class="speaker-name">${member.name}</div>
+            <div class="bubble">${scene.text}</div>
+            <div class="bubble-meta">${readHtml}<span class="time">${scene.time || ''}</span></div>
+          </div>
+        `;
+        chatArea.appendChild(row);
+        chatArea.scrollTop = chatArea.scrollHeight;
+        requestAnimationFrame(() => requestAnimationFrame(() => row.classList.add('visible')));
+      };
+
+      // Typing animation for "right" side messages (not during record)
+      if (member.side === 'right' && !skipTyping) {
+        simulateTyping(scene.text, doShow);
+      } else {
+        doShow();
+      }
     }
 
     function showCaption(text, style) {
@@ -92,10 +176,10 @@
       endingScreen.classList.add('visible');
     }
 
-    window.showScene = function(scene) {
+    window.showScene = function(scene, skipTyping) {
       switch (scene.type) {
         case 'hook': showHook(scene.text); break;
-        case 'message': showMessage(scene); break;
+        case 'message': showMessage(scene, skipTyping); break;
         case 'caption': showCaption(scene.text, scene.style); break;
         case 'ending': showEnding(scene.lines); break;
       }
@@ -104,37 +188,37 @@
     window.initScenario = function(data) {
       members = data.members;
       document.getElementById('groupName').textContent = data.groupName;
-      document.getElementById('memberCount').textContent = `(${Object.keys(members).length})`;
+      document.getElementById('memberCount').textContent = `メンバー ${Object.keys(members).length}`;
     };
 
     window.resetChat = function() {
-      chatArea.innerHTML = '';
+      clearTyping();
+      // Keep the date separator
+      chatArea.innerHTML = '<div class="date-separator">今日</div>';
       hideAll();
     };
 
     window.clearOverlays = function() { hideAll(); };
 
-    // Wait for CSS transitions to finish on the last animated element
+    // Wait for CSS transitions
     function waitForTransition(el) {
       return new Promise(resolve => {
         if (!el) return resolve();
         const handler = () => { el.removeEventListener('transitionend', handler); resolve(); };
         el.addEventListener('transitionend', handler);
-        // Safety timeout: if transitionend never fires (e.g. no transition), resolve after 800ms
         setTimeout(resolve, 800);
       });
     }
 
-    // Show scene and notify parent when visually ready
     async function showSceneAndNotify(scene) {
       let transitionTarget = null;
 
       if (scene.type === 'message') {
-        showMessage(scene);
-        // The last .message-row added
+        // For recording, skip typing animation (capture static result)
+        showMessage(scene, true);
         transitionTarget = chatArea.lastElementChild;
       } else {
-        window.showScene(scene);
+        window.showScene(scene, true);
         if (scene.type === 'hook') transitionTarget = overlay;
         else if (scene.type === 'caption') transitionTarget = captionBar;
         else if (scene.type === 'ending') transitionTarget = endingScreen;
@@ -157,7 +241,7 @@
       }
     }
 
-    // Listen for postMessage from parent editor
+    // Listen for postMessage from parent
     window.addEventListener('message', (e) => {
       const msg = e.data;
       if (!msg || !msg.action) return;
