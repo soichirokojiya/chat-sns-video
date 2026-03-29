@@ -1122,6 +1122,21 @@
           document.getElementById('recProgress').textContent =
             `キャプチャ中… ${i + 1} / ${scenario.scenes.length}`;
 
+          // For right-side messages: capture typing state first
+          if (scene.type === 'message') {
+            const member = scenario.members[scene.speaker];
+            if (member && member.side === 'right') {
+              // Show typing in input bar
+              recFrame.contentWindow.postMessage({ action: 'setTyping', data: scene.text }, '*');
+              await sleep(50);
+              const typingCanvas = await captureFrameAsCanvas(recFrame);
+              capturedScenes.push({ canvas: typingCanvas, durationMs: 800 });
+              // Clear typing before showing the message
+              recFrame.contentWindow.postMessage({ action: 'clearTyping' }, '*');
+              await sleep(50);
+            }
+          }
+
           const readyPromise = waitForChildMessage('sceneReady');
           recFrame.contentWindow.postMessage({ action: 'showSceneForRecord', data: scene }, '*');
           await readyPromise;

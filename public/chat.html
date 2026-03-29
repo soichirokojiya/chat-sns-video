@@ -298,11 +298,19 @@
       });
     }
 
+    // Set typing state instantly (for recording capture)
+    function setTypingState(text) {
+      clearTyping();
+      const displayText = text.split('\n')[0].slice(0, 25);
+      typingText.textContent = displayText;
+      typingCursor.style.display = 'inline-block';
+      sendBtn.classList.add('active');
+    }
+
     async function showSceneAndNotify(scene) {
       let transitionTarget = null;
 
       if (scene.type === 'message') {
-        // For recording, skip typing animation (capture static result)
         showMessage(scene, true);
         transitionTarget = chatArea.lastElementChild;
       } else {
@@ -338,6 +346,8 @@
         case 'showScene': window.showScene(msg.data); break;
         case 'showSceneForRecord': showSceneAndNotify(msg.data); break;
         case 'clearOverlaysForRecord': clearOverlaysAndNotify(); break;
+        case 'setTyping': setTypingState(msg.data); break;
+        case 'clearTyping': clearTyping(); break;
         case 'reset': window.resetChat(); break;
         case 'clearOverlays': window.clearOverlays(); break;
       }
