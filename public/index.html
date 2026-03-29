@@ -1211,8 +1211,8 @@
         sendToRecord('init', scenario);
         await sleep(500);
 
-        // Phase 1: Capture each scene as canvas + duration
-        const capturedScenes = []; // { canvas, durationMs }
+        // Phase 1: Capture each scene as canvas + duration + audio hints
+        const capturedScenes = []; // { canvas, durationMs, audio?: 'typing'|'send'|null }
 
         for (let i = 0; i < scenario.scenes.length; i++) {
           const scene = scenario.scenes[i];
@@ -1223,12 +1223,10 @@
           if (scene.type === 'message') {
             const member = scenario.members[scene.speaker];
             if (member && member.side === 'right') {
-              // Show typing in input bar
               recFrame.contentWindow.postMessage({ action: 'setTyping', data: scene.text }, '*');
               await sleep(50);
               const typingCanvas = await captureFrameAsCanvas(recFrame);
-              capturedScenes.push({ canvas: typingCanvas, durationMs: 800 });
-              // Clear typing before showing the message
+              capturedScenes.push({ canvas: typingCanvas, durationMs: 800, audio: 'typing' });
               recFrame.contentWindow.postMessage({ action: 'clearTyping' }, '*');
               await sleep(50);
             }
@@ -1239,7 +1237,8 @@
           await readyPromise;
 
           const canvas = await captureFrameAsCanvas(recFrame);
-          capturedScenes.push({ canvas, durationMs: scene.durationMs });
+          const audioHint = (scene.type === 'message') ? 'send' : null;
+          capturedScenes.push({ canvas, durationMs: scene.durationMs, audio: audioHint });
 
           if (scene.type === 'hook' || scene.type === 'caption') {
             const clearPromise = waitForChildMessage('clearReady');
@@ -1247,39 +1246,106 @@
             await clearPromise;
 
             const clearCanvas = await captureFrameAsCanvas(recFrame);
-            capturedScenes.push({ canvas: clearCanvas, durationMs: 400 });
+            capturedScenes.push({ canvas: clearCanvas, durationMs: 400, audio: null });
           }
         }
 
         if (capturedScenes.length === 0) throw new Error('キャプチャされたフレームがありません');
 
-        // Phase 2: Encode MP4 using WebCodecs + mp4-muxer
+        // Phase 1.5: Generate audio track using OfflineAudioContext
+        document.getElementById('recProgress').textContent = '音声を生成中…';
+
+        const SAMPLE_RATE = 44100;
+        const totalDurationSec = capturedScenes.reduce((s, c) => s + c.durationMs / 1000, 0) + 1;
+        const offlineCtx = new OfflineAudioContext(1, Math.ceil(totalDurationSec * SAMPLE_RATE), SAMPLE_RATE);
+
+        let audioOffset = 0;
+        for (const cs of capturedScenes) {
+          if (cs.audio === 'typing') {
+            // Generate tap sounds throughout the typing duration
+            const taps = Math.floor(cs.durationMs / 100);
+            for (let t = 0; t < taps; t++) {
+              const tapTime = audioOffset + t * 0.1;
+              const bufSize = Math.floor(SAMPLE_RATE * 0.025);
+              const buf = offlineCtx.createBuffer(1, bufSize, SAMPLE_RATE);
+              const data = buf.getChannelData(0);
+              for (let j = 0; j < bufSize; j++) {
+                data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufSize * 0.15));
+              }
+              const src = offlineCtx.createBufferSource();
+              src.buffer = buf;
+              const filter = offlineCtx.createBiquadFilter();
+              filter.type = 'bandpass';
+              filter.frequency.value = 2000 + Math.random() * 1000;
+              filter.Q.value = 2;
+              const gain = offlineCtx.createGain();
+              gain.gain.value = 0.12;
+              src.connect(filter);
+              filter.connect(gain);
+              gain.connect(offlineCtx.destination);
+              src.start(tapTime);
+            }
+          } else if (cs.audio === 'send') {
+            // Pop sound at the start of the message
+            const osc1 = offlineCtx.createOscillator();
+            const osc2 = offlineCtx.createOscillator();
+            const gain = offlineCtx.createGain();
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(offlineCtx.destination);
+            osc1.frequency.setValueAtTime(880, audioOffset);
+            osc1.frequency.exponentialRampToValueAtTime(1320, audioOffset + 0.08);
+            osc2.frequency.setValueAtTime(1100, audioOffset);
+            osc2.frequency.exponentialRampToValueAtTime(1650, audioOffset + 0.08);
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            gain.gain.setValueAtTime(0.08, audioOffset);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioOffset + 0.15);
+            osc1.start(audioOffset);
+            osc2.start(audioOffset);
+            osc1.stop(audioOffset + 0.15);
+            osc2.stop(audioOffset + 0.15);
+          }
+          audioOffset += cs.durationMs / 1000;
+        }
+
+        const audioBuffer = await offlineCtx.startRendering();
+
+        // Phase 2: Encode MP4 with video + audio using WebCodecs + mp4-muxer
         document.getElementById('recProgress').textContent = 'MP4をエンコード中…';
 
         const muxer = new Mp4Muxer.Muxer({
           target: new Mp4Muxer.ArrayBufferTarget(),
-          video: {
-            codec: 'avc',
-            width: W,
-            height: H,
-          },
+          video: { codec: 'avc', width: W, height: H },
+          audio: { codec: 'aac', sampleRate: SAMPLE_RATE, numberOfChannels: 1 },
           fastStart: 'in-memory',
         });
 
-        const encoder = new VideoEncoder({
+        // Video encoder
+        const videoEncoder = new VideoEncoder({
           output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
           error: (e) => console.error('VideoEncoder error:', e),
         });
-
-        encoder.configure({
+        videoEncoder.configure({
           codec: 'avc1.640033',
-          width: W,
-          height: H,
+          width: W, height: H,
           bitrate: 5_000_000,
           framerate: FPS,
         });
 
-        // For each captured scene, encode frames for its duration
+        // Audio encoder
+        const audioEncoder = new AudioEncoder({
+          output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+          error: (e) => console.error('AudioEncoder error:', e),
+        });
+        audioEncoder.configure({
+          codec: 'mp4a.40.2',
+          sampleRate: SAMPLE_RATE,
+          numberOfChannels: 1,
+          bitrate: 128_000,
+        });
+
+        // Encode video frames
         let timestampUs = 0;
         const frameDurationUs = 1_000_000 / FPS;
 
@@ -1288,25 +1354,44 @@
           const frameCount = Math.max(1, Math.round((durationMs / 1000) * FPS));
 
           document.getElementById('recProgress').textContent =
-            `エンコード中… ${i + 1} / ${capturedScenes.length}`;
+            `映像エンコード中… ${i + 1} / ${capturedScenes.length}`;
 
           for (let f = 0; f < frameCount; f++) {
             const frame = new VideoFrame(canvas, {
               timestamp: timestampUs,
               duration: frameDurationUs,
             });
-            const isKeyframe = (f === 0); // first frame of each scene
-            encoder.encode(frame, { keyFrame: isKeyframe });
+            videoEncoder.encode(frame, { keyFrame: f === 0 });
             frame.close();
             timestampUs += frameDurationUs;
           }
-
-          // Yield to UI to keep progress responsive
           if (i % 3 === 0) await sleep(0);
         }
 
-        await encoder.flush();
-        encoder.close();
+        // Encode audio in chunks
+        document.getElementById('recProgress').textContent = '音声エンコード中…';
+        const pcmData = audioBuffer.getChannelData(0);
+        const audioChunkSize = 1024;
+        for (let offset = 0; offset < pcmData.length; offset += audioChunkSize) {
+          const end = Math.min(offset + audioChunkSize, pcmData.length);
+          const chunk = new Float32Array(end - offset);
+          chunk.set(pcmData.subarray(offset, end));
+          const audioData = new AudioData({
+            format: 'f32',
+            sampleRate: SAMPLE_RATE,
+            numberOfFrames: chunk.length,
+            numberOfChannels: 1,
+            timestamp: Math.round((offset / SAMPLE_RATE) * 1_000_000),
+            data: chunk,
+          });
+          audioEncoder.encode(audioData);
+          audioData.close();
+        }
+
+        await videoEncoder.flush();
+        await audioEncoder.flush();
+        videoEncoder.close();
+        audioEncoder.close();
         muxer.finalize();
 
         const mp4Buffer = muxer.target.buffer;
