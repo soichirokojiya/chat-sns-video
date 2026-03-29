@@ -978,66 +978,71 @@
       btn.disabled = true;
       btn.textContent = '録画準備中…';
       document.getElementById('recordOverlay').classList.add('active');
-      document.getElementById('recProgress').textContent = 'シーンをキャプチャ中…';
-
-      const recFrame = document.getElementById('recordFrame');
-
-      // Reset and init the recording iframe, wait for load
-      sendToRecord('reset');
-      sendToRecord('init', scenario);
-      // Wait for iframe to settle (init is synchronous, just need a rAF)
-      await new Promise(r => recFrame.contentWindow.requestAnimationFrame(() =>
-        recFrame.contentWindow.requestAnimationFrame(r)
-      ));
-
-      // Phase 1: Capture each scene state as PNG with its intended duration
-      const frames = []; // Array of { blob: Blob, durationSec: number }
-
-      for (let i = 0; i < scenario.scenes.length; i++) {
-        const scene = scenario.scenes[i];
-        document.getElementById('recProgress').textContent =
-          `キャプチャ中… ${i + 1} / ${scenario.scenes.length}`;
-
-        // Tell iframe to show scene and wait for transitionend notification
-        const readyPromise = waitForChildMessage('sceneReady');
-        recFrame.contentWindow.postMessage({ action: 'showSceneForRecord', data: scene }, '*');
-        await readyPromise;
-
-        // Capture the fully rendered state
-        const blob = await captureFrameAsPng(recFrame);
-        frames.push({ blob, durationSec: scene.durationMs / 1000 });
-
-        // For hook/caption: also capture the "cleared" state with a short gap
-        if (scene.type === 'hook' || scene.type === 'caption') {
-          const clearPromise = waitForChildMessage('clearReady');
-          recFrame.contentWindow.postMessage({ action: 'clearOverlaysForRecord' }, '*');
-          await clearPromise;
-
-          const clearBlob = await captureFrameAsPng(recFrame);
-          frames.push({ blob: clearBlob, durationSec: 0.4 });
-        }
-      }
-
-      // Phase 2: Load ffmpeg.wasm and build mp4
-      document.getElementById('recProgress').textContent = 'mp4を生成中…（初回は読み込みに少し時間がかかります）';
 
       try {
+        document.getElementById('recProgress').textContent = 'シーンをキャプチャ中…';
+
+        const recFrame = document.getElementById('recordFrame');
+
+        // Reset and init the recording iframe
+        sendToRecord('reset');
+        sendToRecord('init', scenario);
+        // Wait for iframe to settle
+        await sleep(500);
+
+        // Phase 1: Capture each scene state as PNG with its intended duration
+        const frames = []; // Array of { blob: Blob, durationSec: number }
+
+        for (let i = 0; i < scenario.scenes.length; i++) {
+          const scene = scenario.scenes[i];
+          document.getElementById('recProgress').textContent =
+            `キャプチャ中… ${i + 1} / ${scenario.scenes.length}`;
+
+          // Tell iframe to show scene and wait for transitionend notification
+          const readyPromise = waitForChildMessage('sceneReady');
+          recFrame.contentWindow.postMessage({ action: 'showSceneForRecord', data: scene }, '*');
+          await readyPromise;
+
+          // Capture the fully rendered state
+          const blob = await captureFrameAsPng(recFrame);
+          if (!blob) throw new Error(`フレーム ${i + 1} のキャプチャに失敗しました`);
+          frames.push({ blob, durationSec: scene.durationMs / 1000 });
+
+          // For hook/caption: also capture the "cleared" state with a short gap
+          if (scene.type === 'hook' || scene.type === 'caption') {
+            const clearPromise = waitForChildMessage('clearReady');
+            recFrame.contentWindow.postMessage({ action: 'clearOverlaysForRecord' }, '*');
+            await clearPromise;
+
+            const clearBlob = await captureFrameAsPng(recFrame);
+            if (clearBlob) frames.push({ blob: clearBlob, durationSec: 0.4 });
+          }
+        }
+
+        if (frames.length === 0) throw new Error('キャプチャされたフレームがありません');
+
+        // Phase 2: Load ffmpeg.wasm and build mp4
+        document.getElementById('recProgress').textContent = 'ffmpegを読み込み中…（初回は30秒ほどかかります）';
+
+        if (typeof FFmpegWASM === 'undefined') throw new Error('FFmpegWASM が読み込まれていません。ページを再読み込みしてください。');
+        if (typeof FFmpegUtil === 'undefined') throw new Error('FFmpegUtil が読み込まれていません。ページを再読み込みしてください。');
+
         const { FFmpeg } = FFmpegWASM;
         const { fetchFile, toBlobURL } = FFmpegUtil;
         const ffmpeg = new FFmpeg();
 
-        document.getElementById('recProgress').textContent = 'ffmpegを読み込み中…（初回は30秒ほどかかります）';
-
-        // Convert all resources to same-origin blob URLs to avoid COEP/Worker restrictions
+        // Convert all resources to same-origin blob URLs
         const [coreURL, wasmURL, workerURL] = await Promise.all([
           toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript'),
           toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm'),
           toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js', 'text/javascript'),
         ]);
 
+        document.getElementById('recProgress').textContent = 'ffmpegを初期化中…';
         await ffmpeg.load({ coreURL, wasmURL, classWorkerURL: workerURL });
 
         // Write each frame PNG and build concat file
+        document.getElementById('recProgress').textContent = 'フレームを書き込み中…';
         let concatContent = '';
         for (let i = 0; i < frames.length; i++) {
           const filename = `frame${String(i).padStart(4, '0')}.png`;
@@ -1046,16 +1051,14 @@
           concatContent += `file '${filename}'\n`;
           concatContent += `duration ${frames[i].durationSec.toFixed(3)}\n`;
         }
-        // Concat demuxer requires the last file to be listed again (without duration)
-        if (frames.length > 0) {
-          concatContent += `file 'frame${String(frames.length - 1).padStart(4, '0')}.png'\n`;
-        }
+        // Concat demuxer requires the last file listed again
+        concatContent += `file 'frame${String(frames.length - 1).padStart(4, '0')}.png'\n`;
 
         await ffmpeg.writeFile('concat.txt', new TextEncoder().encode(concatContent));
 
         document.getElementById('recProgress').textContent = 'エンコード中…';
 
-        await ffmpeg.exec([
+        const exitCode = await ffmpeg.exec([
           '-f', 'concat',
           '-safe', '0',
           '-i', 'concat.txt',
@@ -1069,6 +1072,8 @@
           'output.mp4'
         ]);
 
+        if (exitCode !== 0) throw new Error(`ffmpegがエラーコード ${exitCode} で終了しました`);
+
         const mp4Data = await ffmpeg.readFile('output.mp4');
         const mp4Blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
 
@@ -1080,9 +1085,11 @@
         URL.revokeObjectURL(url);
 
         ffmpeg.terminate();
+        document.getElementById('recProgress').textContent = '完了！';
       } catch (e) {
-        console.error('ffmpeg.wasm failed:', e);
-        alert('mp4の生成に失敗しました: ' + e.message);
+        console.error('録画エラー:', e);
+        const msg = (e instanceof Error) ? e.message : String(e);
+        alert('mp4の生成に失敗しました:\n' + msg);
       }
 
       document.getElementById('recordOverlay').classList.remove('active');
