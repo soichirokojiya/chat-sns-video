@@ -135,6 +135,9 @@ body.dm-mode .chat-area {
   align-self: flex-end;
   flex-direction: row-reverse;
 }
+.message-row.right .avatar {
+  display: none;
+}
 
 /* === Avatar === */
 .avatar {
@@ -186,7 +189,7 @@ body.dm-mode .speaker-name {
   max-width: 700px;
 }
 .left .bubble {
-  background: #fff;
+  background: #E9E9EB;
   color: #111;
   border-top-left-radius: 4px;
 }

@@ -279,6 +279,7 @@
         <button onclick="addScene('message')">+ メッセージ</button>
         <button onclick="addScene('caption')">+ テロップ</button>
         <button onclick="addScene('ending')">+ エンディング</button>
+        <button onclick="addScene('switchContext')">+ 画面切替</button>
       </div>
     </div>
 
@@ -362,36 +363,40 @@
     // ==================== 10 Preset Scenarios ====================
     const PRESETS = [
       {
-        label: "👫 夫婦で帰宅時間もめる",
+        label: "👫 夫婦で帰宅時間もめる(DM切替)",
         scenario: {
-          title: "夫婦LINE - 帰宅時間篇",
-          format: { width: 1080, height: 1920, fps: 30, durationSec: 24 },
+          title: "夫婦LINE - うめこDMフォロー篇",
+          format: { width: 1080, height: 1920, fps: 30, durationSec: 35 },
           groupName: "家族グループ",
           members: { ...UMEKO_MEMBERS },
           preMessages: [
-            { speaker: "husband", text: "お昼何食べた？", time: "12:10" },
-            { speaker: "wife", text: "パスタ！おいしかった😊", time: "12:15" },
-            { speaker: "husband", text: "いいな〜", time: "12:16" },
-            { speaker: "wife", text: "写真撮ったよ", time: "12:16" },
-            { speaker: "wife", text: "🍝", time: "12:17" },
-            { speaker: "husband", text: "うまそう！", time: "12:20" },
-            { speaker: "wife", text: "今日の夜ごはん何がいい？", time: "17:30" },
-            { speaker: "husband", text: "なんでもいいよ〜", time: "17:35" },
-            { speaker: "wife", text: "じゃあハンバーグにするね", time: "17:40" },
+            { speaker: "wife", text: "今日の晩ごはん何にする？", time: "17:30" },
+            { speaker: "husband", text: "なんでもいいよ", time: "17:35" },
+            { speaker: "wife", text: "それが一番困るんだけど😅", time: "17:36" },
+            { speaker: "husband", text: "じゃあカレーで！", time: "17:38" },
+            { speaker: "wife", text: "了解〜", time: "17:40" },
             { speaker: "husband", text: "👍", time: "17:41" },
           ],
           scenes: [
-            { type: "hook", text: "夫婦LINE、ちょっと\n険悪になる前に──", durationMs: 3000 },
-            { type: "message", speaker: "husband", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1800 },
-            { type: "message", speaker: "wife", text: "……またなんだ", time: "18:43", durationMs: 1800 },
-            { type: "message", speaker: "husband", text: "仕方ないだろ、仕事なんだから", time: "18:43", durationMs: 2000 },
-            { type: "caption", text: "ちょっと空気が重くなってきた…", durationMs: 1500 },
-            { type: "message", speaker: "wife", text: "わかってるけど、毎回それ言われると\n何も言えなくなる", time: "18:44", durationMs: 2500 },
-            { type: "caption", text: "そこに、うめこが──", style: "highlight", effect: "flash", durationMs: 1500 },
-            { type: "message", speaker: "umeko", effect: "focus", text: "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？", time: "18:44", durationMs: 4000 },
-            { type: "message", speaker: "husband", text: "…水曜なら早く帰れるかも", time: "18:45", durationMs: 1800 },
-            { type: "message", speaker: "wife", text: "じゃあ水曜ごはん一緒に食べよ ☺️", time: "18:45", durationMs: 2000 },
-            { type: "ending", lines: [...ENDING_DEFAULT], durationMs: 4000 }
+            { type: "hook", text: "夫婦LINE、ちょっと\n険悪になったとき──", durationMs: 2500 },
+            { type: "message", speaker: "husband", text: "今日も遅くなる、ごめん", time: "18:42", durationMs: 1500 },
+            { type: "message", speaker: "wife", text: "……またなんだ", time: "18:43", durationMs: 1500 },
+            { type: "message", speaker: "husband", text: "仕方ないだろ、仕事なんだから", time: "18:43", durationMs: 1500 },
+            { type: "message", speaker: "wife", text: "わかってるけど、毎回それ言われると\n何も言えなくなる", time: "18:44", effect: "shake", durationMs: 2000 },
+            { type: "caption", text: "空気が重くなってきた…", durationMs: 1500 },
+            { type: "caption", text: "うめこが空気の変化を検知💡", style: "highlight", effect: "flash", durationMs: 1500 },
+            { type: "caption", text: "グループではなく、それぞれにDMで──", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "wife", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "あかねさん、さっきのやりとり\n気になったので 😌\nたかしさんも申し訳なく思ってると\n思いますよ。\n「今週どこかで早く帰れる日ある？」\nって聞いてみるのはどうですか？", time: "18:45", durationMs: 3500 },
+            { type: "message", speaker: "wife", text: "…たしかに、そう聞けばよかった", time: "18:46", durationMs: 1500 },
+            { type: "switchContext", to: "dm", dmWith: "husband", durationMs: 800 },
+            { type: "message", speaker: "umeko", effect: "glow", text: "たかしさん、お仕事おつかれさまです。\nあかねさんは寂しいんだと思います。\n「遅くなってごめん、◯曜は早く帰るね」\nって伝えると安心するかもです 😊", time: "18:45", durationMs: 3500 },
+            { type: "message", speaker: "husband", text: "そっか…ちょっと言い方きつかったな", time: "18:46", durationMs: 1500 },
+            { type: "caption", text: "それぞれが自分の言葉でグループに戻る", style: "highlight", durationMs: 1500 },
+            { type: "switchContext", to: "group", durationMs: 800 },
+            { type: "message", speaker: "husband", text: "さっきはごめん。\n水曜は早く帰るから、ごはん一緒に食べよう", time: "18:50", durationMs: 2500 },
+            { type: "message", speaker: "wife", text: "うん、楽しみにしてる ☺️", time: "18:51", effect: "glow", durationMs: 2000 },
+            { type: "ending", lines: ["どちらが悪いかより、\nどうしたらうまくいくか。", "うめこ", "LINEグループに追加するだけ", "umeko.life"], durationMs: 4000 }
           ]
         }
       },
@@ -881,6 +886,21 @@
               <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
               <span style="font-size:12px;color:#aaa">ms</span>
             </div>`;
+        } else if (scene.type === 'switchContext') {
+          const toOpts = ['group', 'dm'].map(v =>
+            `<option value="${v}" ${scene.to === v ? 'selected' : ''}>${v === 'group' ? 'グループ' : 'DM'}</option>`
+          ).join('');
+          const memberOpts = Object.keys(scenario.members).map(k =>
+            `<option value="${k}" ${scene.dmWith === k ? 'selected' : ''}>${scenario.members[k]?.name || k}</option>`
+          ).join('');
+          bodyHtml = `
+            <div class="scene-type-row"><span class="scene-type-badge" style="background:#E8EAF6;color:#283593">切替</span><span class="scene-duration">${scene.durationMs}ms</span></div>
+            <div class="scene-fields">
+              <select onchange="updateSceneField(${i},'to',this.value)">${toOpts}</select>
+              <select onchange="updateSceneField(${i},'dmWith',this.value)">${memberOpts}</select>
+              <input type="number" value="${scene.durationMs}" style="width:80px" oninput="updateSceneField(${i},'durationMs',parseInt(this.value)||1000)">
+              <span style="font-size:12px;color:#aaa">ms</span>
+            </div>`;
         }
 
         card.innerHTML = `
@@ -927,6 +947,7 @@
         message: { type: 'message', speaker: firstMember, text: 'メッセージ内容', time: '18:00', durationMs: 2000 },
         caption: { type: 'caption', text: 'テロップ内容', durationMs: 1500 },
         ending: { type: 'ending', lines: ['タグライン', 'うめこ', 'CTA', 'umeko.life'], durationMs: 4000 },
+        switchContext: { type: 'switchContext', to: 'dm', dmWith: Object.keys(scenario.members)[0], durationMs: 800 },
       };
       scenario.scenes.push(JSON.parse(JSON.stringify(templates[type])));
       renderScenes();

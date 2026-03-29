@@ -150,6 +150,40 @@
       }
     }
 
+    // Typing sound using Web Audio API
+    let audioCtx = null;
+    function playTypeSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 800 + Math.random() * 400;
+        osc.type = 'sine';
+        gain.gain.value = 0.03;
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } catch(e) {}
+    }
+
+    function playSendSound() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 1200;
+        osc.type = 'sine';
+        gain.gain.value = 0.06;
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } catch(e) {}
+    }
+
     function clearTyping() {
       if (typingTimer) { clearInterval(typingTimer); typingTimer = null; }
       typingText.textContent = '';
@@ -165,18 +199,20 @@
 
       typingTimer = setInterval(() => {
         if (idx < displayText.length) {
+          playTypeSound();
           typingText.textContent = displayText.slice(0, idx + 1);
           idx++;
           if (idx > 3) sendBtn.classList.add('active');
         } else {
           clearInterval(typingTimer);
           typingTimer = null;
+          playSendSound();
           setTimeout(() => {
             clearTyping();
             if (callback) callback();
           }, 200);
         }
-      }, 60);
+      }, 100);
     }
 
     function showHook(text) {
