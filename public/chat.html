@@ -47,6 +47,10 @@
     <div class="send-btn" id="sendBtn">▶</div>
   </div>
 
+  <!-- Effect overlays -->
+  <div class="effect-focus-overlay" id="focusOverlay"></div>
+  <div class="effect-flash-overlay" id="flashOverlay"></div>
+
   <!-- Overlays -->
   <div class="overlay" id="overlay">
     <div class="overlay-bg"></div>
@@ -75,6 +79,8 @@
     const typingText = document.getElementById('typingText');
     const typingCursor = document.getElementById('typingCursor');
     const sendBtn = document.getElementById('sendBtn');
+    const focusOverlay = document.getElementById('focusOverlay');
+    const flashOverlay = document.getElementById('flashOverlay');
 
     let members = {};
     let typingTimer = null;
@@ -83,6 +89,48 @@
       overlay.classList.remove('visible');
       captionBar.classList.remove('visible');
       endingScreen.classList.remove('visible');
+    }
+
+    function clearEffects() {
+      // Focus
+      focusOverlay.classList.remove('active');
+      document.querySelectorAll('.effect-focus-target').forEach(el => el.classList.remove('effect-focus-target'));
+      // Zoom
+      chatArea.classList.remove('effect-zoom');
+      document.body.classList.remove('effect-zoom');
+      // Shake
+      document.body.classList.remove('effect-shake');
+      // Flash
+      flashOverlay.classList.remove('active');
+      // Glow
+      document.querySelectorAll('.effect-glow').forEach(el => el.classList.remove('effect-glow'));
+    }
+
+    function applyEffect(effect, targetRow) {
+      clearEffects();
+      if (!effect || effect === 'none') return;
+
+      switch (effect) {
+        case 'focus':
+          focusOverlay.classList.add('active');
+          if (targetRow) targetRow.classList.add('effect-focus-target');
+          break;
+        case 'zoom':
+          document.body.classList.add('effect-zoom');
+          break;
+        case 'shake':
+          document.body.classList.add('effect-shake');
+          // Remove after animation so it can be re-triggered
+          setTimeout(() => document.body.classList.remove('effect-shake'), 600);
+          break;
+        case 'flash':
+          flashOverlay.classList.add('active');
+          setTimeout(() => flashOverlay.classList.remove('active'), 900);
+          break;
+        case 'glow':
+          if (targetRow) targetRow.classList.add('effect-glow');
+          break;
+      }
     }
 
     function clearTyping() {
@@ -136,7 +184,6 @@
           ? `<img class="avatar" src="${member.avatarImage}" alt="${member.name}">`
           : `<div class="avatar" style="background:${member.avatarColor}">${member.avatarEmoji}</div>`;
 
-        // Add read receipt for right-side messages
         const readHtml = member.side === 'right' ? '<span class="read-receipt">既読</span>' : '';
 
         row.innerHTML = `
@@ -149,10 +196,13 @@
         `;
         chatArea.appendChild(row);
         chatArea.scrollTop = chatArea.scrollHeight;
-        requestAnimationFrame(() => requestAnimationFrame(() => row.classList.add('visible')));
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          row.classList.add('visible');
+          // Apply effect after message is visible
+          if (scene.effect) applyEffect(scene.effect, row);
+        }));
       };
 
-      // Typing animation for "right" side messages (not during record)
       if (member.side === 'right' && !skipTyping) {
         simulateTyping(scene.text, doShow);
       } else {
@@ -177,11 +227,26 @@
     }
 
     window.showScene = function(scene, skipTyping) {
+      // Clear previous effects (unless this scene has its own)
+      if (!scene.effect) clearEffects();
+
       switch (scene.type) {
-        case 'hook': showHook(scene.text); break;
-        case 'message': showMessage(scene, skipTyping); break;
-        case 'caption': showCaption(scene.text, scene.style); break;
-        case 'ending': showEnding(scene.lines); break;
+        case 'hook':
+          showHook(scene.text);
+          if (scene.effect) applyEffect(scene.effect);
+          break;
+        case 'message':
+          showMessage(scene, skipTyping);
+          // effect is applied inside showMessage after row is visible
+          break;
+        case 'caption':
+          showCaption(scene.text, scene.style);
+          if (scene.effect) applyEffect(scene.effect);
+          break;
+        case 'ending':
+          showEnding(scene.lines);
+          clearEffects();
+          break;
       }
     };
 
@@ -193,7 +258,7 @@
 
     window.resetChat = function() {
       clearTyping();
-      // Keep the date separator
+      clearEffects();
       chatArea.innerHTML = '<div class="date-separator">今日</div>';
       hideAll();
     };

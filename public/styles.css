@@ -358,3 +358,74 @@ body {
   color: #06C755;
   font-weight: 600;
 }
+
+/* === Scene Effects === */
+
+/* Focus: dim everything, spotlight on last message */
+.effect-focus-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.effect-focus-overlay.active {
+  opacity: 1;
+}
+.message-row.effect-focus-target {
+  position: relative;
+  z-index: 51;
+  filter: drop-shadow(0 0 30px rgba(255,255,255,0.3));
+}
+
+/* Zoom: slow zoom into chat area */
+.effect-zoom {
+  animation: effectZoom 2s ease-out forwards;
+}
+@keyframes effectZoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+/* Shake: screen vibration */
+.effect-shake {
+  animation: effectShake 0.5s ease-out;
+}
+@keyframes effectShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-12px); }
+  20% { transform: translateX(10px); }
+  30% { transform: translateX(-8px); }
+  40% { transform: translateX(6px); }
+  50% { transform: translateX(-4px); }
+  60% { transform: translateX(2px); }
+}
+
+/* Flash: white flash transition */
+.effect-flash-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #fff;
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+}
+.effect-flash-overlay.active {
+  animation: effectFlash 0.8s ease-out forwards;
+}
+@keyframes effectFlash {
+  0% { opacity: 0; }
+  15% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* Glow: message glows softly */
+.message-row.effect-glow .bubble {
+  animation: effectGlow 1.5s ease-in-out;
+}
+@keyframes effectGlow {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 40px rgba(245, 200, 66, 0.6), 0 0 80px rgba(245, 200, 66, 0.2); }
+}

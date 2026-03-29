@@ -71,6 +71,7 @@
       "type": "caption",
       "text": "そこに、うめこが──",
       "style": "highlight",
+      "effect": "flash",
       "durationMs": 1500
     },
     {
@@ -78,6 +79,7 @@
       "speaker": "umeko",
       "text": "二人とも気持ちはわかります 😌\nたかしさんは申し訳なく思ってるし、\nあかねさんは寂しいんですよね。\n\"今週どこかで早く帰れる日ある？\"\nって聞いてみるのはどうですか？",
       "time": "18:44",
+      "effect": "focus",
       "durationMs": 4000
     },
     {
